@@ -67,8 +67,13 @@ export async function callOpenRouter(
     throw new Error(`OpenRouter ${res.status}: ${text}`)
   }
 
-  const data = await res.json()
-  const content = data?.choices?.[0]?.message?.content
+  let data: unknown
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error(`OpenRouter ${res.status}: invalid JSON response`)
+  }
+  const content = (data as { choices?: Array<{ message?: { content?: unknown } }> })?.choices?.[0]?.message?.content
   if (typeof content !== "string") throw new Error("OpenRouter returned unexpected response shape")
   return content
 }
@@ -85,6 +90,10 @@ function getRedis(): Redis | null {
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   })
   return _redis
+}
+
+export function resetRedis(): void {
+  _redis = null
 }
 
 export async function getCachedResult(domain: string): Promise<AgentCheckResponse | null> {

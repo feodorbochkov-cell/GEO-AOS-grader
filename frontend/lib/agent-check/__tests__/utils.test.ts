@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { normalizeUrl, checkRateLimit, callOpenRouter } from "../utils"
+import { normalizeUrl, checkRateLimit, callOpenRouter, getCachedResult, setCachedResult, resetRedis } from "../utils"
 
 describe("normalizeUrl", () => {
   it("adds https:// when no scheme given", () => {
@@ -94,5 +94,23 @@ describe("callOpenRouter", () => {
   it("throws on non-200 response", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Unauthorized", { status: 401 }))
     await expect(callOpenRouter("model", "prompt")).rejects.toThrow("OpenRouter 401")
+  })
+})
+
+describe("cache functions (Redis not configured)", () => {
+  beforeEach(() => {
+    resetRedis()
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+  })
+
+  it("getCachedResult returns null when Redis not configured", async () => {
+    const result = await getCachedResult("example.com")
+    expect(result).toBeNull()
+  })
+
+  it("setCachedResult resolves without throwing when Redis not configured", async () => {
+    const fakeResult = { domain: "example.com", scannedAt: "", totalScore: 0, grade: "", gradeColor: "", blocks: {} as never }
+    await expect(setCachedResult("example.com", fakeResult)).resolves.toBeUndefined()
   })
 })
