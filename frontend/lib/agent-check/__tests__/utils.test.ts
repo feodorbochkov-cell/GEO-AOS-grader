@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
-import { normalizeUrl, checkRateLimit } from "../utils"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { normalizeUrl, checkRateLimit, callOpenRouter } from "../utils"
 
 describe("normalizeUrl", () => {
   it("adds https:// when no scheme given", () => {
@@ -45,5 +45,54 @@ describe("checkRateLimit", () => {
     const ip = "3.3.3.3"
     for (let i = 0; i < 9; i++) checkRateLimit(ip)
     expect(checkRateLimit(ip)).toBe(true) // 10th request — allowed
+  })
+})
+
+describe("callOpenRouter", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn())
+    process.env.OPENROUTER_API_KEY = "test-key"
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    delete process.env.OPENROUTER_API_KEY
+  })
+
+  it("returns message content on success", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({ choices: [{ message: { content: '{"found":true}' } }] }),
+        { status: 200 }
+      )
+    )
+    const result = await callOpenRouter("anthropic/claude-haiku-4-5", "test prompt", 300)
+    expect(result).toBe('{"found":true}')
+  })
+
+  it("calls OpenRouter with Authorization header and json response_format", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({ choices: [{ message: { content: "{}" } }] }),
+        { status: 200 }
+      )
+    )
+    await callOpenRouter("anthropic/claude-haiku-4-5", "prompt")
+    const [url, opts] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions")
+    const body = JSON.parse(opts.body as string)
+    expect(body.model).toBe("anthropic/claude-haiku-4-5")
+    expect(body.response_format).toEqual({ type: "json_object" })
+    expect((opts.headers as Record<string, string>)["Authorization"]).toBe("Bearer test-key")
+  })
+
+  it("throws when OPENROUTER_API_KEY is missing", async () => {
+    delete process.env.OPENROUTER_API_KEY
+    await expect(callOpenRouter("model", "prompt")).rejects.toThrow("OPENROUTER_API_KEY not set")
+  })
+
+  it("throws on non-200 response", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("Unauthorized", { status: 401 }))
+    await expect(callOpenRouter("model", "prompt")).rejects.toThrow("OpenRouter 401")
   })
 })
