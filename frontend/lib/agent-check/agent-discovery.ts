@@ -1,41 +1,36 @@
 import { fetchWithTimeout } from "./utils"
-import type { BlockResult, CheckResult } from "./types"
+import type { Phase1Result, AgentDiscoveryPhase1Results } from "./types"
 
 const USER_AGENT = `AgentReadinessBot/1.0 (compatible; ${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/agent-report)`
 const HEADERS = { "User-Agent": USER_AGENT }
 
 const AI_BOTS = ["anthropic-ai", "gpt-bot", "claude-bot", "perplexity-bot", "cohere-ai", "google-extended", "amazonbot"]
 const ACTION_SECTIONS = ["## api", "## tools", "## actions", "## capabilities", "## integrations"]
-const HIGH_VALUE_TYPES = ["WebAPI", "APIReference", "SoftwareApplication", "Action", "EntryPoint"]
-const MEDIUM_VALUE_TYPES = ["Service", "Organization", "WebSite", "Product"]
 
-type LlmsResult = CheckResult & { found: boolean; hasActionSections: boolean; wordCount: number }
-type RobotsResult = CheckResult & { allowedBots: string[]; blockedBots: string[] }
-type SchemaResult = CheckResult & { typesFound: string[] }
-type SdkResult = CheckResult & { found: boolean }
-
-async function checkLlmsTxt(baseUrl: string): Promise<LlmsResult> {
+async function checkLlmsTxt(baseUrl: string): Promise<Phase1Result> {
   try {
     const res = await fetchWithTimeout(`${baseUrl}/llms.txt`, { headers: HEADERS })
-    if (!res.ok) return { score: 0, maxScore: 8, found: false, hasActionSections: false, wordCount: 0 }
+    if (!res.ok) return { status: "NOT_FOUND" }
     const text = await res.text()
     const lower = text.toLowerCase()
-    let score = 2
-    if (/^-\s+https?:\/\//m.test(text)) score += 1
     const hasActionSections = ACTION_SECTIONS.some(s => lower.includes(s))
-    if (hasActionSections) score += 3
     const wordCount = text.split(/\s+/).filter(Boolean).length
-    if (wordCount >= 200) score += 2
-    return { score: Math.min(score, 8), maxScore: 8, found: true, hasActionSections, wordCount }
+    const hasLinks = /^-\s+https?:\/\//m.test(text)
+    return {
+      status: "FOUND",
+      evidence: `${baseUrl}/llms.txt`,
+      rawData: { wordCount, hasActionSections, hasLinks },
+    }
   } catch {
-    return { score: 0, maxScore: 8, found: false, hasActionSections: false, wordCount: 0 }
+    return { status: "NOT_FOUND" }
   }
 }
 
-async function checkRobotsTxtAi(baseUrl: string): Promise<RobotsResult> {
+async function checkRobotsTxtAi(baseUrl: string): Promise<Phase1Result> {
   try {
     const res = await fetchWithTimeout(`${baseUrl}/robots.txt`, { headers: HEADERS })
-    if (!res.ok) return { score: 6, maxScore: 6, allowedBots: [...AI_BOTS], blockedBots: [] }
+    if (!res.ok) return { status: "FOUND", rawData: { allowedBots: [...AI_BOTS], blockedBots: [] } }
+
     const text = await res.text()
     const lines = text.split("\n").map(l => l.trim())
     let currentAgents: string[] = []
@@ -64,49 +59,32 @@ async function checkRobotsTxtAi(baseUrl: string): Promise<RobotsResult> {
       explicitBlocked.has(bot) || (wildcardBlocked && !wildcardExceptions.has(bot))
     )
     const allowedBots = AI_BOTS.filter(b => !blockedBots.includes(b))
-    const blocked = blockedBots.length
-
-    let score: number
-    if (blocked === 0) score = 6
-    else if (blocked <= 2) score = 4
-    else if (blocked <= 4) score = 2
-    else score = 0
-
-    return { score, maxScore: 6, allowedBots, blockedBots }
+    return { status: "FOUND", rawData: { allowedBots, blockedBots } }
   } catch {
-    return { score: 6, maxScore: 6, allowedBots: [...AI_BOTS], blockedBots: [] }
+    return { status: "FOUND", rawData: { allowedBots: [...AI_BOTS], blockedBots: [] } }
   }
 }
 
-async function checkSchemaOrg(baseUrl: string): Promise<SchemaResult> {
-  try {
-    const res = await fetchWithTimeout(baseUrl, { headers: HEADERS })
-    if (!res.ok) return { score: 0, maxScore: 6, typesFound: [] }
-    const html = await res.text()
-    const ldMatches = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
-    const typesFound: string[] = []
-    let score = 0
+function checkSchemaOrgInHtml(html: string): Phase1Result {
+  const ldMatches = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+  const typesFound: string[] = []
 
-    for (const match of ldMatches) {
-      try {
-        const data = JSON.parse(match[1])
-        const items = Array.isArray(data) ? data : [data]
-        for (const item of items) {
-          const t = item?.["@type"]
-          if (typeof t !== "string" || typesFound.includes(t)) continue
-          typesFound.push(t)
-          if (HIGH_VALUE_TYPES.includes(t)) score = Math.min(score + 2, 6)
-          else if (MEDIUM_VALUE_TYPES.includes(t)) score = Math.min(score + 1, 6)
-        }
-      } catch { /* malformed JSON-LD */ }
-    }
-    return { score, maxScore: 6, typesFound }
-  } catch {
-    return { score: 0, maxScore: 6, typesFound: [] }
+  for (const match of ldMatches) {
+    try {
+      const data = JSON.parse(match[1])
+      const items = Array.isArray(data) ? data : [data]
+      for (const item of items) {
+        const t = item?.["@type"]
+        if (typeof t === "string" && !typesFound.includes(t)) typesFound.push(t)
+      }
+    } catch { /* malformed JSON-LD */ }
   }
+
+  if (typesFound.length === 0) return { status: "NOT_FOUND" }
+  return { status: "FOUND", rawData: { typesFound } }
 }
 
-async function checkSdkDocs(baseUrl: string): Promise<SdkResult> {
+async function checkSdkDocs(baseUrl: string): Promise<Phase1Result> {
   let signals = 0
   const pages = [baseUrl, `${baseUrl}/developers`, `${baseUrl}/docs`]
 
@@ -124,25 +102,40 @@ async function checkSdkDocs(baseUrl: string): Promise<SdkResult> {
     } catch { /* ignore */ }
   }))
 
-  const score = signals >= 5 ? 5 : signals >= 3 ? 3 : signals >= 1 ? 1 : 0
-  return { score, maxScore: 5, found: signals > 0 }
+  if (signals >= 5) return { status: "FOUND", evidence: `${signals} SDK signals found` }
+  if (signals >= 1) return { status: "UNCERTAIN", evidence: `${signals} weak SDK signal(s)` }
+  return { status: "NOT_FOUND" }
 }
 
-export async function checkAgentDiscovery(baseUrl: string): Promise<BlockResult> {
-  const [llmsRes, robotsRes, schemaRes, sdkRes] = await Promise.allSettled([
+export async function checkAgentDiscoveryPhase1(
+  baseUrl: string,
+  homepageHtml: string
+): Promise<AgentDiscoveryPhase1Results> {
+  const [llmsRes, robotsRes, sdkRes] = await Promise.allSettled([
     checkLlmsTxt(baseUrl),
     checkRobotsTxtAi(baseUrl),
-    checkSchemaOrg(baseUrl),
     checkSdkDocs(baseUrl),
   ])
 
-  const checks = {
-    llmsTxt: llmsRes.status === "fulfilled" ? llmsRes.value : { score: 0, maxScore: 8, found: false, hasActionSections: false, wordCount: 0 },
-    robotsTxtAi: robotsRes.status === "fulfilled" ? robotsRes.value : { score: 6, maxScore: 6, allowedBots: [...AI_BOTS], blockedBots: [] },
-    schemaOrg: schemaRes.status === "fulfilled" ? schemaRes.value : { score: 0, maxScore: 6, typesFound: [] },
-    sdkDocs: sdkRes.status === "fulfilled" ? sdkRes.value : { score: 0, maxScore: 5, found: false },
+  return {
+    llmsTxt: llmsRes.status === "fulfilled" ? llmsRes.value : { status: "NOT_FOUND" },
+    robotsTxtAi: robotsRes.status === "fulfilled" ? robotsRes.value : { status: "FOUND", rawData: { allowedBots: [...AI_BOTS], blockedBots: [] } },
+    schemaOrg: checkSchemaOrgInHtml(homepageHtml),
+    sdkDocs: sdkRes.status === "fulfilled" ? sdkRes.value : { status: "NOT_FOUND" },
   }
+}
 
-  const score = checks.llmsTxt.score + checks.robotsTxtAi.score + checks.schemaOrg.score + checks.sdkDocs.score
-  return { score, maxScore: 25, checks }
+// Backward compatibility wrapper for index.ts (temporary)
+export async function checkAgentDiscovery(baseUrl: string) {
+  const phase1 = await checkAgentDiscoveryPhase1(baseUrl, "")
+  return {
+    score: 0,
+    maxScore: 25,
+    checks: {
+      llmsTxt: { score: 0, maxScore: 8, found: phase1.llmsTxt.status === "FOUND" },
+      robotsTxtAi: { score: 0, maxScore: 6, found: phase1.robotsTxtAi.status === "FOUND" },
+      schemaOrg: { score: 0, maxScore: 6, found: phase1.schemaOrg.status === "FOUND" },
+      sdkDocs: { score: 0, maxScore: 5, found: phase1.sdkDocs.status === "FOUND" },
+    },
+  }
 }

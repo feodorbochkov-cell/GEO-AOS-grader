@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { checkAgentDiscovery } from "../agent-discovery"
+import { checkAgentDiscoveryPhase1 } from "../agent-discovery"
 import * as utils from "../utils"
 
 vi.mock("../utils", async importOriginal => {
@@ -12,72 +12,86 @@ const mockFetch = vi.mocked(utils.fetchWithTimeout)
 function ok(body: string, ct = "text/plain"): Response {
   return new Response(body, { status: 200, headers: { "Content-Type": ct } })
 }
-function notFound(): Response {
-  return new Response("Not Found", { status: 404 })
-}
+function notFound(): Response { return new Response("Not Found", { status: 404 }) }
 
 beforeEach(() => { mockFetch.mockReset() })
 
-describe("llms.txt scoring", () => {
-  it("awards 0 pts when llms.txt not found", async () => {
+describe("llmsTxt", () => {
+  it("returns NOT_FOUND when /llms.txt is 404", async () => {
     mockFetch.mockResolvedValue(notFound())
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.checks.llmsTxt.score).toBe(0)
-    expect((result.checks.llmsTxt as { found: boolean }).found).toBe(false)
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    expect(r.llmsTxt.status).toBe("NOT_FOUND")
   })
 
-  it("awards base 2 pts when llms.txt found", async () => {
+  it("returns FOUND with wordCount when /llms.txt is 200", async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes("/llms.txt")) return Promise.resolve(ok("# Hello world"))
+      if (url.includes("/llms.txt")) return Promise.resolve(ok("# Hello world\nThis is content."))
       return Promise.resolve(notFound())
     })
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.checks.llmsTxt.score).toBeGreaterThanOrEqual(2)
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    expect(r.llmsTxt.status).toBe("FOUND")
+    expect((r.llmsTxt.rawData as { wordCount: number }).wordCount).toBeGreaterThan(0)
   })
 
-  it("awards +3 when llms.txt has ## Tools section", async () => {
+  it("records hasActionSections=true when llms.txt has ## Tools section", async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes("/llms.txt")) return Promise.resolve(ok("# Intro\n## Tools\nsome tool info"))
+      if (url.includes("/llms.txt")) return Promise.resolve(ok("# Intro\n## Tools\nsome tool"))
       return Promise.resolve(notFound())
     })
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.checks.llmsTxt.score).toBeGreaterThanOrEqual(5) // 2 base + 3 sections
-    expect((result.checks.llmsTxt as unknown as { hasActionSections: boolean }).hasActionSections).toBe(true)
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    expect((r.llmsTxt.rawData as { hasActionSections: boolean }).hasActionSections).toBe(true)
   })
 })
 
-describe("robots.txt AI scoring", () => {
-  it("awards 6 pts when robots.txt not found (allowed by default)", async () => {
+describe("robotsTxtAi", () => {
+  it("returns FOUND with empty blockedBots when robots.txt is 404", async () => {
     mockFetch.mockResolvedValue(notFound())
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.checks.robotsTxtAi.score).toBe(6)
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    expect(r.robotsTxtAi.status).toBe("FOUND")
+    expect((r.robotsTxtAi.rawData as { blockedBots: string[] }).blockedBots).toHaveLength(0)
   })
 
-  it("awards 0 pts when all bots blocked via wildcard Disallow: /", async () => {
-    const robotsTxt = "User-agent: *\nDisallow: /"
+  it("returns FOUND with all AI bots in blockedBots when wildcard Disallow: /", async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes("/robots.txt")) return Promise.resolve(ok(robotsTxt))
+      if (url.includes("/robots.txt")) return Promise.resolve(ok("User-agent: *\nDisallow: /"))
       return Promise.resolve(notFound())
     })
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.checks.robotsTxtAi.score).toBe(0)
-  })
-
-  it("awards full pts when only non-AI bots are restricted", async () => {
-    const robotsTxt = "User-agent: Googlebot\nDisallow: /private"
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes("/robots.txt")) return Promise.resolve(ok(robotsTxt))
-      return Promise.resolve(notFound())
-    })
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.checks.robotsTxtAi.score).toBe(6)
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    const rawData = r.robotsTxtAi.rawData as { blockedBots: string[] }
+    expect(rawData.blockedBots.length).toBeGreaterThan(0)
   })
 })
 
-describe("checkAgentDiscovery totals", () => {
-  it("maxScore is 25", async () => {
+describe("schemaOrg", () => {
+  it("returns NOT_FOUND when no JSON-LD in homepageHtml", async () => {
     mockFetch.mockResolvedValue(notFound())
-    const result = await checkAgentDiscovery("https://example.com")
-    expect(result.maxScore).toBe(25)
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "<p>No schema here</p>")
+    expect(r.schemaOrg.status).toBe("NOT_FOUND")
+  })
+
+  it("returns FOUND when JSON-LD with SoftwareApplication in homepageHtml", async () => {
+    mockFetch.mockResolvedValue(notFound())
+    const html = `<script type="application/ld+json">{"@type":"SoftwareApplication","name":"Test"}</script>`
+    const r = await checkAgentDiscoveryPhase1("https://example.com", html)
+    expect(r.schemaOrg.status).toBe("FOUND")
+    expect((r.schemaOrg.rawData as { typesFound: string[] }).typesFound).toContain("SoftwareApplication")
+  })
+})
+
+describe("sdkDocs", () => {
+  it("returns NOT_FOUND when no SDK signals", async () => {
+    mockFetch.mockResolvedValue(notFound())
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    expect(r.sdkDocs.status).toBe("NOT_FOUND")
+  })
+
+  it("returns FOUND when signals >= 5", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      // npmjs.com (2) + npm install (2) + pip install (2) = 6 signals
+      if (url.includes("/developers")) return Promise.resolve(ok('<a href="https://npmjs.com/package/example">npm</a><p>npm install example</p><p>pip install example</p>'))
+      return Promise.resolve(notFound())
+    })
+    const r = await checkAgentDiscoveryPhase1("https://example.com", "")
+    expect(r.sdkDocs.status).toBe("FOUND")
   })
 })
