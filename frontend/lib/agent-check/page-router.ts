@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from "./utils"
+import { fetchWithTimeout, callOpenRouter } from "./utils"
 import type { Phase2CheckName, RouterOutput } from "./types"
 
 const HEADERS = { "User-Agent": `AgentReadinessBot/1.0` }
@@ -116,6 +116,105 @@ export async function fetchPagesForUrls(urls: string[]): Promise<string> {
     } catch { /* skip */ }
   }
   return parts.join("\n\n")
+}
+
+const SONNET = "anthropic/claude-sonnet-4-5"
+
+interface SonnetRouterRaw {
+  platformHint: string
+  pages: Partial<Record<Phase2CheckName, string[]>>
+  taskHints: Partial<Record<Phase2CheckName, string>>
+}
+
+function buildRouterPrompt(domain: string, title: string, description: string, candidates: string[]): string {
+  return `You are a routing agent for an AI agent operability checker. Your job is to identify the best pages to fetch for each check type.
+
+DOMAIN: ${domain}
+PAGE TITLE: ${title}
+META DESCRIPTION: ${description}
+
+DISCOVERED CANDIDATE URLs:
+${candidates.map((u, i) => `${i + 1}. ${u}`).join("\n")}
+
+For each check type, return the 3 best URLs to fetch. You may use URLs from the candidate list OR URLs from your world knowledge if the candidate list is missing something important. Also return a one-line task hint if you have specific knowledge about this platform.
+
+Check types:
+- mcpServer: find an official MCP (Model Context Protocol) server
+- openApiSpec: find an OpenAPI/Swagger machine-readable spec file
+- publicApiExists: find the developer portal or API documentation
+- schemaOrg: find pages with JSON-LD structured data
+- sdkDocs: find SDK / client library documentation
+- oauth: find OAuth 2.0 authentication documentation
+- apiKeySupport: find API key / personal access token documentation
+
+Return ONLY valid JSON (no markdown, no other text):
+{
+  "platformHint": "one-line platform description or empty string",
+  "pages": {
+    "mcpServer": ["url1", "url2", "url3"],
+    "openApiSpec": ["url1", "url2", "url3"],
+    "publicApiExists": ["url1", "url2", "url3"],
+    "schemaOrg": ["url1", "url2", "url3"],
+    "sdkDocs": ["url1", "url2", "url3"],
+    "oauth": ["url1", "url2", "url3"],
+    "apiKeySupport": ["url1", "url2", "url3"]
+  },
+  "taskHints": {
+    "mcpServer": "specific hint or empty string",
+    "openApiSpec": "specific hint or empty string",
+    "publicApiExists": "specific hint or empty string",
+    "schemaOrg": "specific hint or empty string",
+    "sdkDocs": "specific hint or empty string",
+    "oauth": "specific hint or empty string",
+    "apiKeySupport": "specific hint or empty string"
+  }
+}`
+}
+
+export async function callSonnetRouter(
+  domain: string,
+  title: string,
+  description: string,
+  candidates: string[]
+): Promise<SonnetRouterRaw> {
+  const prompt = buildRouterPrompt(domain, title, description, candidates)
+  const raw = await callOpenRouter(SONNET, prompt, 1000)
+  const content = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim()
+  const parsed = JSON.parse(content) as SonnetRouterRaw
+  if (!parsed?.pages || typeof parsed.pages !== "object") throw new Error("Invalid router response")
+  return parsed
+}
+
+export async function runPageRouter(
+  url: string,
+  domain: string,
+  homepageHtml: string,
+  needed: Set<Phase2CheckName>
+): Promise<RouterOutput> {
+  if (needed.size === 0) return { platformHint: "", pages: {}, taskHints: {} }
+
+  try {
+    const candidates = await buildCandidates(homepageHtml, url)
+    const title = /<title[^>]*>([^<]*)<\/title>/i.exec(homepageHtml)?.[1]?.trim() ?? ""
+    const metaDesc = /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i.exec(homepageHtml)?.[1]?.trim() ?? ""
+
+    const routerResult = await callSonnetRouter(domain, title, metaDesc, candidates)
+
+    const pageEntries = await Promise.all(
+      [...needed].map(async name => {
+        const urls = routerResult.pages[name] ?? []
+        return [name, await fetchPagesForUrls(urls)] as [Phase2CheckName, string]
+      })
+    )
+
+    return {
+      platformHint: routerResult.platformHint ?? "",
+      pages: Object.fromEntries(pageEntries),
+      taskHints: routerResult.taskHints ?? {},
+    }
+  } catch {
+    return buildFallbackOutput(url, needed)
+  }
 }
 
 export async function buildFallbackOutput(baseUrl: string, needed: Set<Phase2CheckName>): Promise<RouterOutput> {
