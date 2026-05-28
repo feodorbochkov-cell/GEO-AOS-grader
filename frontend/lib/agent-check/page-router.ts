@@ -17,6 +17,24 @@ const HARDCODED_PATHS: Record<Phase2CheckName, string[]> = {
   apiKeySupport:    ["/docs/authentication", "/developers", "/api"],
 }
 
+export function isSafeUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (u.protocol !== "https:" && u.protocol !== "http:") return false
+    const h = u.hostname.toLowerCase()
+    if (h === "localhost" || h === "127.0.0.1" || h === "::1") return false
+    // Block private IPv4 ranges
+    const ipv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+    if (ipv4) {
+      const [, a, b] = ipv4.map(Number)
+      if (a === 10) return false
+      if (a === 172 && b >= 16 && b <= 31) return false
+      if (a === 192 && b === 168) return false
+    }
+    return true
+  } catch { return false }
+}
+
 function resolveHref(href: string, baseUrl: string): string | null {
   try { return new URL(href, baseUrl).href } catch { return null }
 }
@@ -106,7 +124,7 @@ export async function buildCandidates(html: string, baseUrl: string): Promise<st
 
 export async function fetchPagesForUrls(urls: string[]): Promise<string> {
   const parts: string[] = []
-  for (const url of urls.slice(0, 3)) {
+  for (const url of urls.slice(0, 3).filter(isSafeUrl)) {
     try {
       const res = await fetchWithTimeout(url, { headers: HEADERS }, 8000)
       if (res.ok) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { extractNavLinks, buildCandidates, callSonnetRouter, runPageRouter } from "../page-router"
+import { extractNavLinks, buildCandidates, callSonnetRouter, runPageRouter, isSafeUrl } from "../page-router"
 import * as utils from "../utils"
 import type { Phase2CheckName } from "../types"
 
@@ -160,5 +160,28 @@ describe("runPageRouter", () => {
     expect(result.platformHint).toBe("")
     expect(result.pages).toEqual({})
     expect(result.taskHints).toEqual({})
+  })
+})
+
+describe("isSafeUrl", () => {
+  it("allows https public URLs", () => {
+    expect(isSafeUrl("https://docs.github.com/sdk")).toBe(true)
+    expect(isSafeUrl("http://example.com/api")).toBe(true)
+  })
+
+  it("blocks private IP ranges", () => {
+    expect(isSafeUrl("http://10.0.0.1/internal")).toBe(false)
+    expect(isSafeUrl("http://192.168.1.1/admin")).toBe(false)
+    expect(isSafeUrl("http://172.16.0.1/secret")).toBe(false)
+  })
+
+  it("blocks localhost", () => {
+    expect(isSafeUrl("http://localhost/api")).toBe(false)
+    expect(isSafeUrl("http://127.0.0.1/api")).toBe(false)
+  })
+
+  it("blocks non-http protocols", () => {
+    expect(isSafeUrl("file:///etc/passwd")).toBe(false)
+    expect(isSafeUrl("ftp://example.com")).toBe(false)
   })
 })
