@@ -1,6 +1,7 @@
 # Hybrid Two-Phase Checking — Design Spec
 
 **Date:** 2026-05-28  
+**Updated:** 2026-05-29 — Phase 1.5 Sonnet Router added  
 **Feature:** Improved Agent Operability scoring via deterministic HTTP + agentic LLM fallback  
 **Status:** Approved
 
@@ -56,6 +57,74 @@ type Phase1Result = {
 
 ---
 
+## Phase 1.5 — Sonnet Router (added 2026-05-29)
+
+**Timing:** ~3–6s (discovery + one Sonnet call + parallel page fetches)  
+**Cost:** ~$0.003–0.005 (one Sonnet call, short input/output)  
+**LLM:** `anthropic/claude-sonnet-4-5` via OpenRouter  
+**File:** `lib/agent-check/page-router.ts`
+
+### Why It Exists
+
+Phase 2 Haiku agents originally fetched hardcoded paths (`/developers`, `/docs`, `/product`, etc.) that don't match most real platforms. GitHub's SDK docs are at `docs.github.com`; Stripe's auth docs are at `stripe.com/docs/api`. The agents had no way to know this, so they returned 0 for things that clearly exist.
+
+Phase 1.5 solves this by discovering where a site's relevant content actually lives before handing off to Haiku agents.
+
+### Trigger Condition
+
+Runs after Phase 1, before Phase 2. Only runs if at least one check needs Phase 2 (i.e., the `needed` set is non-empty). If Phase 1 resolved everything, Phase 1.5 is skipped.
+
+### Step A: Nav/Sitemap Discovery (deterministic, no LLM)
+
+From the already-fetched homepage HTML:
+
+1. Extract `<a href>` from `<nav>`, `<header>`, `<footer>` elements
+2. Also scan full HTML for links containing keywords: `docs`, `api`, `developer`, `sdk`, `library`, `reference`
+3. Resolve relative URLs to absolute; filter to same domain **+** doc subdomains (`docs.*`, `developer.*`, `api.*`, `dev.*`)
+4. Cap at 25 candidates
+5. Fetch `robots.txt` → find `Sitemap:` directive → fetch sitemap → extract up to 20 keyword-matching URLs
+6. Deduplicate, cap at 35 candidates total
+7. Fallback: if fewer than 3 candidates, add `/docs`, `/developers`, `/api`, `/about`
+
+### Step B: Sonnet Router Call
+
+**Input:** domain, homepage `<title>` + `<meta description>`, list of ~35 candidate URLs
+
+**Sonnet's job:**
+1. Identify the platform if known ("GitHub — code hosting platform")
+2. For each of 7 check types, return the 3 best URLs to fetch — from the candidate list **or** from world knowledge if candidates are missing something important
+3. Return a one-line task hint per check type when it has specific knowledge ("GitHub's SDK is Octokit, @octokit/core on npm")
+
+**Output schema:**
+```typescript
+{
+  platformHint: string
+  pages: Partial<Record<Phase2CheckName, string[]>>   // 3 URLs per check
+  taskHints: Partial<Record<Phase2CheckName, string>> // platform-specific hints
+}
+```
+
+**Fallback:** If the Sonnet router call fails, `buildFallbackOutput` fetches the original hardcoded paths — behavior is identical to the pre-Phase-1.5 system.
+
+### Step C: Page Fetching
+
+For each check in the `needed` set, the router fetches its 3 assigned URLs in parallel and concatenates the HTML excerpts (2000 chars each) into a single `pages` string. All unsafe URLs (localhost, private IP ranges, non-http protocols) are filtered out before fetching (SSRF protection).
+
+### Types Added
+
+```typescript
+type RouterPageMap = Partial<Record<Phase2CheckName, string>>  // pre-fetched HTML content
+type RouterHintMap = Partial<Record<Phase2CheckName, string>>  // one-line platform hints
+
+interface RouterOutput {
+  platformHint: string
+  pages: RouterPageMap
+  taskHints: RouterHintMap
+}
+```
+
+---
+
 ## Phase 2 — Haiku Sub-Agents
 
 **Timing:** ≤15s per sub-agent, all triggered sub-agents in parallel  
@@ -68,7 +137,7 @@ After Phase 1 completes, the orchestrator inspects each check's status. Any chec
 
 ### Sub-Agent Interface
 
-Each sub-agent is an exported async function in `lib/agent-check/phase2-agents.ts`:
+Each sub-agent is an exported async function in `lib/agent-check/phase2-agents.ts`. **Note: signatures changed in 2026-05-29 update — agents no longer fetch their own pages.**
 
 ```typescript
 type SubAgentResult = {
@@ -78,39 +147,53 @@ type SubAgentResult = {
   details?: string    // extra context (e.g. repo age, package name)
 }
 
-async function checkMcpServerAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
-async function checkOpenApiSpecAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
-async function checkPublicApiAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
-async function checkOAuthAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
-async function checkApiKeyAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
-async function checkSdkDocsAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
-async function checkSchemaOrgAgent(url: string, homepageHtml: string): Promise<SubAgentResult>
+// New signatures (post Phase 1.5):
+async function checkMcpServerAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
+async function checkOpenApiSpecAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
+async function checkPublicApiAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
+async function checkOAuthAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
+async function checkApiKeyAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
+async function checkSdkDocsAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
+async function checkSchemaOrgAgent(domain: string, pages: string, taskHint: string): Promise<SubAgentResult>
 ```
 
-Each function may fetch up to 3 additional pages beyond the homepage HTML it receives. The JS function itself calls `fetchWithTimeout` to retrieve those pages and includes their HTML content in the Haiku prompt — Haiku does not fetch autonomously.
+`pages` is pre-fetched HTML content from Phase 1.5 (concatenated excerpts). `taskHint` is the platform-specific hint from the Sonnet router, injected as `PLATFORM HINT: …` at the end of the task prompt. Agents perform **no HTTP fetching** themselves.
 
 ### Sub-Agent Task Prompts
 
-**MCP Server:**  
-"Search this website for an official MCP (Model Context Protocol) server. Check the homepage HTML provided, then if needed fetch /developers, /docs, /platform pages. Look for links or mentions of 'MCP server', 'model context protocol', a GitHub repository containing 'mcp' in the name, or install instructions like 'npx @modelcontextprotocol/'. Return the repository URL or install command as evidence."
+Prompts are sent with the pre-fetched `pages` content and optional `PLATFORM HINT` appended. The prompt structure is:
 
-**OpenAPI / Swagger Spec:**  
-"Search this website for an OpenAPI or Swagger API specification. It may be linked from the homepage, /developers, /docs, /api, /platform, or /build pages. Look for links containing 'openapi', 'swagger', 'api-spec', 'api-docs', or 'rest-api'. Also check if the homepage HTML mentions an API specification URL. Return the URL if found."
+```
+You are analyzing {domain} for AI agent operability.
 
-**OAuth 2.0:**  
-"Find evidence that this platform supports OAuth 2.0 authentication. Check /docs, /developers, /api, /docs/authentication, /docs/auth, /security pages. Look for text mentioning 'OAuth 2.0', 'OAuth2', 'OpenID Connect', 'authorization flow', 'access token'. Return a URL and a short quote as evidence."
+PAGES:
+{pages}
 
-**API Key / Token Support:**  
-"Find evidence that this platform offers API keys or tokens for programmatic access. Check /settings, /account, /developers, /api, /docs/authentication pages. Look for 'API key', 'API token', 'personal access token', 'secret key', 'bearer token'. Return a URL and short quote."
+TASK: {task description}
 
-**SDK Documentation:**  
-"Find evidence of a developer SDK for this platform. Check the homepage HTML and /developers, /docs, /build, /platform pages. Look for links to npmjs.com, pypi.org, or github.com alongside the word 'SDK', or text like 'npm install', 'pip install', 'client library'. Return the URL and package name if found."
+PLATFORM HINT: {taskHint}   ← only included when non-empty
+```
 
-**Schema.org (fallback to inner pages):**  
-"Check the /about, /product, /features, or /platform pages of this website for JSON-LD structured data. Look for @type values of: SoftwareApplication, WebAPI, APIReference, Service, Action, EntryPoint. Return the @type found and the page URL."
+**MCP Server task:**  
+"Search for an official MCP (Model Context Protocol) server for {domain}. Look for links or mentions of 'MCP server', 'model context protocol', a GitHub repository with 'mcp' in the name alongside {domain}, or install instructions like 'npx @modelcontextprotocol/'. Return the repository URL or install command as evidence."
 
-**Public API Exists:**  
-"Determine if this platform offers a public API. Search the homepage, navigation, footer, and /developers or /docs pages for mentions of 'API', 'REST API', 'GraphQL API', 'developer platform', or links to API documentation. Return a confidence level and URL evidence."
+**OpenAPI / Swagger Spec task:**  
+"Find an OpenAPI or Swagger API specification for {domain}. Look for links containing 'openapi', 'swagger', 'api-spec', 'api-docs', or 'rest-api', file extensions .json or .yaml on spec-like paths, or mentions of a machine-readable API specification URL. Return the direct URL to the spec file."
+
+**OAuth 2.0 task:**  
+"Find evidence that {domain} supports OAuth 2.0 authentication. Look for text mentioning 'OAuth 2.0', 'OAuth2', 'OpenID Connect', 'authorization flow', or 'access token'. Return a URL and a short quoted snippet as evidence."
+
+**API Key / Token Support task:**  
+"Find evidence that {domain} offers API keys or tokens for programmatic access. Look for 'API key', 'API token', 'personal access token', 'secret key', or 'bearer token'. Return a URL and short quote."
+
+**SDK Documentation task:**  
+"Find evidence of a developer SDK for {domain}. Look for links to npmjs.com, pypi.org, or GitHub alongside the word 'SDK', or text like 'npm install', 'pip install', 'client library'. Return the URL and package name if found."
+
+**Schema.org task:**  
+"Check the pages provided for JSON-LD structured data (inside `<script type="application/ld+json">` tags). Look for @type values: SoftwareApplication, WebAPI, APIReference, Service, Action, or EntryPoint. Return the @type found and the page URL."
+
+**Public API Exists task:**  
+"Determine if {domain} offers a public API for programmatic access. Look in navigation, footer, and the pages provided for mentions of 'API', 'REST API', 'GraphQL API', 'developer platform', or links to API documentation. Return a URL to the API docs or developer portal."
 
 ### OpenRouter Call Pattern
 
@@ -184,13 +267,19 @@ The key principle: **Sonnet scores what was actually found, not what a rubric sa
 ## Orchestrator Changes (`lib/agent-check/index.ts`)
 
 ```
-1. Fetch homepage HTML (shared, cached in memory)
-2. Run all Phase 1 checks in parallel (pass homepageHtml)
-3. Identify checks with status NOT_FOUND or UNCERTAIN
-4. Run Phase 2 sub-agents in parallel for those checks only
-5. Call Sonnet synthesis with all evidence
-6. Assemble final BlockResult objects from SonnetScoringResult
-7. Check DB cache before step 1; write to cache after step 6
+1. Check Redis cache — return cached result if hit
+2. Fetch homepage HTML (shared, cached in memory)
+3. Run all Phase 1 checks in parallel (pass homepageHtml)
+4. Identify checks with status NOT_FOUND or UNCERTAIN → needed set
+5. [Phase 1.5] Run Sonnet Router:
+   a. Extract nav/sitemap candidates from homepageHtml (deterministic)
+   b. Call Sonnet to map best 3 URLs per check type + inject platform hints
+   c. Fetch those pages in parallel → RouterOutput { pages, taskHints }
+   d. Fallback to hardcoded paths if Sonnet call fails
+6. Run Phase 2 Haiku sub-agents in parallel, passing (domain, pages, taskHint) per check
+7. Call Sonnet synthesis with all Phase 1 + Phase 2 evidence
+8. Assemble final BlockResult objects from SonnetScoringResult
+9. Write result to Redis cache
 ```
 
 ---
@@ -208,12 +297,17 @@ The key principle: **Sonnet scores what was actually found, not what a rubric sa
 ## Timing Budget
 
 ```
-Homepage fetch:       ~1s
-Phase 1 (parallel):   ≤8s
-Phase 2 (parallel):   ≤15s  (only if triggered)
-Sonnet synthesis:     ≤10s
-Total:                ≤35s
+Homepage fetch:            ~1s
+Phase 1 (parallel):        ≤8s
+Phase 1.5 — discovery:     ~1s   (nav parsing + robots/sitemap fetch)
+Phase 1.5 — Sonnet router: ~3s   (one Sonnet call)
+Phase 1.5 — page fetches:  ~3s   (parallel, 3 URLs per check)
+Phase 2 (parallel):        ≤15s  (only if triggered)
+Sonnet synthesis:          ≤10s
+Total:                     ≤42s  (worst case, all phases triggered)
 ```
+
+Phase 1.5 adds ~6–7s on top of the original budget when fully triggered. If Phase 1 resolves all checks, Phase 1.5 is skipped entirely.
 
 ---
 
@@ -244,14 +338,16 @@ justification?: string
 |---|---|
 | `lib/agent-check/phase2-agents.ts` | 7 exported Haiku sub-agent functions |
 | `lib/agent-check/sonnet-scoring.ts` | Sonnet synthesis function |
+| `lib/agent-check/page-router.ts` | Phase 1.5: nav/sitemap discovery, Sonnet router call, page fetching, SSRF-safe URL filter |
 
 ## Modified Files
 
 | File | Change |
 |---|---|
-| `lib/agent-check/index.ts` | Two-phase orchestration + caching |
+| `lib/agent-check/index.ts` | Three-phase orchestration (Phase 1 → 1.5 → 2) + caching |
 | `lib/agent-check/machine-interface.ts` | Return Phase1Result instead of BlockResult |
 | `lib/agent-check/agent-discovery.ts` | Return Phase1Result instead of BlockResult |
 | `lib/agent-check/auth-security.ts` | Return Phase1Result instead of BlockResult |
-| `lib/agent-check/types.ts` | Add Phase1Status, Phase1Result, SubAgentResult, ScoredCheck |
+| `lib/agent-check/types.ts` | Add Phase1Status, Phase1Result, SubAgentResult, ScoredCheck, RouterOutput, RouterPageMap, RouterHintMap |
 | `lib/agent-check/utils.ts` | Add Upstash Redis cache helpers |
+| `lib/agent-check/phase2-agents.ts` | Agent signatures updated from `(url, homepageHtml)` to `(domain, pages, taskHint)` — agents no longer fetch their own pages |
