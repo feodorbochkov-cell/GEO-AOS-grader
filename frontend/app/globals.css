@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { height: 100%; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-900;
+  }
+}
+
+@media print {
+  /* Печатаем фоновые цвета (Hero, метрики, выделение упоминаний) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html, body {
+    background: white !important;
+  }
+
+  /* Скрываем CTA, скролл-бары expanded-блоков и всё с print-hide */
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Главная обёртка отчёта — без внутренних паддингов экранного варианта */
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Hero не должен разрываться между страницами */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Таблица промптов: пусть не разрывает строки */
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Раскрытый ответ Perplexity — снять max-height/overflow, чтобы всё попало в PDF */
+  .max-h-96 {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Recharts: SVG сами по себе печатаются нормально, форсим контейнер на полную ширину */
+  .recharts-wrapper {
+    page-break-inside: avoid;
+  }
+
+  /* Убираем тени и скругления чуть-чуть для аккуратной печати */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}
