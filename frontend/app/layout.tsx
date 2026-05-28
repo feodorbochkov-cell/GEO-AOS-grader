@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AEO Grader",
-  description: "Отчёт о видимости бренда в AI-поисковой выдаче",
+  description: "Разовый отчет о видимости бренда в AI-поиске Perplexity",
 };
 
 export default function RootLayout({
