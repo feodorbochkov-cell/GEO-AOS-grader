@@ -9,10 +9,11 @@ import {
 import { scoreSonnet } from "./sonnet-scoring"
 import { callBrowserService } from "./browser-operability"
 import { getGrade } from "./scoring"
+import { runPageRouter } from "./page-router"
 import type {
   AgentCheckResponse, BlockResult, SSEEvent,
   MachineInterfacePhase1Results, AgentDiscoveryPhase1Results, AuthSecurityPhase1Results,
-  Phase2CheckName, SubAgentResult, ScoredCheck,
+  Phase2CheckName, SubAgentResult, ScoredCheck, RouterOutput,
 } from "./types"
 
 const USER_AGENT = `AgentReadinessBot/1.0 (compatible; ${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/agent-report)`
@@ -34,20 +35,23 @@ function identifyPhase2Checks(
 }
 
 async function runPhase2(
-  url: string,
-  homepageHtml: string,
-  needed: Set<Phase2CheckName>
+  domain: string,
+  needed: Set<Phase2CheckName>,
+  router: RouterOutput
 ): Promise<Partial<Record<Phase2CheckName, SubAgentResult>>> {
   if (needed.size === 0) return {}
 
+  const hint = (n: Phase2CheckName) => router.taskHints[n] ?? ""
+  const pages = (n: Phase2CheckName) => router.pages[n] ?? ""
+
   const tasks: Array<[Phase2CheckName, Promise<SubAgentResult>]> = []
-  if (needed.has("mcpServer")) tasks.push(["mcpServer", checkMcpServerAgent(url, homepageHtml)])
-  if (needed.has("openApiSpec")) tasks.push(["openApiSpec", checkOpenApiSpecAgent(url, homepageHtml)])
-  if (needed.has("publicApiExists")) tasks.push(["publicApiExists", checkPublicApiAgent(url, homepageHtml)])
-  if (needed.has("schemaOrg")) tasks.push(["schemaOrg", checkSchemaOrgAgent(url, homepageHtml)])
-  if (needed.has("sdkDocs")) tasks.push(["sdkDocs", checkSdkDocsAgent(url, homepageHtml)])
-  if (needed.has("oauth")) tasks.push(["oauth", checkOAuthAgent(url, homepageHtml)])
-  if (needed.has("apiKeySupport")) tasks.push(["apiKeySupport", checkApiKeyAgent(url, homepageHtml)])
+  if (needed.has("mcpServer"))        tasks.push(["mcpServer",        checkMcpServerAgent(domain,        pages("mcpServer"),        hint("mcpServer"))])
+  if (needed.has("openApiSpec"))      tasks.push(["openApiSpec",      checkOpenApiSpecAgent(domain,      pages("openApiSpec"),      hint("openApiSpec"))])
+  if (needed.has("publicApiExists"))  tasks.push(["publicApiExists",  checkPublicApiAgent(domain,        pages("publicApiExists"),  hint("publicApiExists"))])
+  if (needed.has("schemaOrg"))        tasks.push(["schemaOrg",        checkSchemaOrgAgent(domain,        pages("schemaOrg"),        hint("schemaOrg"))])
+  if (needed.has("sdkDocs"))          tasks.push(["sdkDocs",          checkSdkDocsAgent(domain,          pages("sdkDocs"),          hint("sdkDocs"))])
+  if (needed.has("oauth"))            tasks.push(["oauth",            checkOAuthAgent(domain,            pages("oauth"),            hint("oauth"))])
+  if (needed.has("apiKeySupport"))    tasks.push(["apiKeySupport",    checkApiKeyAgent(domain,           pages("apiKeySupport"),    hint("apiKeySupport"))])
 
   const results = await Promise.allSettled(tasks.map(([, p]) => p))
   const merged: Partial<Record<Phase2CheckName, SubAgentResult>> = {}
@@ -156,9 +160,14 @@ export async function runAgentCheck(
       ? authRes.value
       : { oauth: { status: "NOT_FOUND" }, apiKeySupport: { status: "NOT_FOUND" }, corsPolicy: { status: "NOT_FOUND" } }
 
-    // Phase 2 — Haiku sub-agents for unresolved checks
+    // Phase 2 — identify what needs agent resolution
     const phase2Needed = identifyPhase2Checks(machine, discovery, auth)
-    const phase2Results = await runPhase2(url, homepageHtml, phase2Needed)
+
+    // Phase 1.5 — Sonnet Router: discover real pages + inject platform hints
+    const routerOutput = await runPageRouter(url, domain, homepageHtml, phase2Needed)
+
+    // Phase 2 — Haiku sub-agents using router-provided pages and hints
+    const phase2Results = await runPhase2(domain, phase2Needed, routerOutput)
 
     // Sonnet synthesis
     const scored = await scoreSonnet(domain, machine, discovery, auth, phase2Results)
