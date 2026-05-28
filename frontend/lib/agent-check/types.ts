@@ -94,6 +94,17 @@ export type Phase2CheckName =
   | "oauth"
   | "apiKeySupport"
 
+// ── Page Router ───────────────────────────────────────────────────────────────
+
+export type RouterPageMap = Partial<Record<Phase2CheckName, string>>
+export type RouterHintMap = Partial<Record<Phase2CheckName, string>>
+
+export interface RouterOutput {
+  platformHint: string
+  pages: RouterPageMap      // pre-fetched HTML content per check type
+  taskHints: RouterHintMap  // one-line platform-specific hint per check type
+}
+
 // ── Sonnet Scoring ────────────────────────────────────────────────────────────
 
 export interface ScoredCheck {
