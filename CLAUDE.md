@@ -55,10 +55,13 @@ See [architecture.md](architecture.md) for full AEO Grader stack details.
 
 ---
 
-## Implementation Plan
+## Implementation Plans & Specs
 
-Full task-by-task plan:
+Agent Operability Report — feature plan:
 `docs/superpowers/plans/2026-05-28-agent-operability-report.md`
 
-Design spec:
+Agent Operability Report — original design spec:
 `docs/superpowers/specs/2026-05-28-agent-operability-report-design.md`
+
+Hybrid Two-Phase Checking — scoring accuracy redesign spec (current):
+`docs/superpowers/specs/2026-05-28-hybrid-two-phase-checking-design.md`
