@@ -14,7 +14,10 @@ const mockOpenRouter = vi.mocked(utils.callOpenRouter)
 function notFound(): Response { return new Response("Not Found", { status: 404 }) }
 function okText(body: string): Response { return new Response(body, { status: 200 }) }
 
-beforeEach(() => { mockFetch.mockReset() })
+beforeEach(() => {
+  mockFetch.mockReset()
+  mockOpenRouter.mockReset()
+})
 
 describe("extractNavLinks", () => {
   it("extracts links from nav elements", () => {

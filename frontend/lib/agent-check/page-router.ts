@@ -178,7 +178,7 @@ export async function callSonnetRouter(
   candidates: string[]
 ): Promise<SonnetRouterRaw> {
   const prompt = buildRouterPrompt(domain, title, description, candidates)
-  const raw = await callOpenRouter(SONNET, prompt, 1000)
+  const raw = await callOpenRouter(SONNET, prompt, 2000)
   const content = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim()
   const parsed = JSON.parse(content) as SonnetRouterRaw
   if (!parsed?.pages || typeof parsed.pages !== "object") throw new Error("Invalid router response")
