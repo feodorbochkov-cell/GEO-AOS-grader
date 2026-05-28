@@ -48,7 +48,7 @@ describe("checkMcpServerAgent", () => {
     mockOpenRouter.mockResolvedValue(JSON.stringify({ found: false, confidence: "low", evidence: "" }))
     await checkMcpServerAgent("example.com", PAGES, "Check github.com/example/mcp for the server")
     const calledPrompt = mockOpenRouter.mock.calls[0][1] as string
-    expect(calledPrompt).toContain("Check github.com/example/mcp for the server")
+    expect(calledPrompt).toContain("PLATFORM HINT: Check github.com/example/mcp for the server")
   })
 })
 
