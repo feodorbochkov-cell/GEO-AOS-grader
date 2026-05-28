@@ -1,20 +1,17 @@
 import { fetchWithTimeout } from "./utils"
-import type { BlockResult, CheckResult } from "./types"
+import type { Phase1Result, AuthSecurityPhase1Results } from "./types"
 
 const USER_AGENT = `AgentReadinessBot/1.0 (compatible; ${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/agent-report)`
 const HEADERS = { "User-Agent": USER_AGENT }
+const API_KEY_PATTERN = /api\s*key|api\s*token|access\s+token|personal\s+access\s+token|secret\s+key/i
 
-type OAuthResult = CheckResult & { found: boolean; method: "well-known" | "docs" | null }
-type ApiKeyResult = CheckResult & { found: boolean }
-type CorsResult = CheckResult & { policy: string | null; status?: "no_api_found" }
-
-async function checkOAuth(baseUrl: string): Promise<OAuthResult> {
+async function checkOAuth(baseUrl: string): Promise<Phase1Result> {
   for (const path of ["/.well-known/oauth-authorization-server", "/.well-known/openid-configuration"]) {
     try {
       const res = await fetchWithTimeout(`${baseUrl}${path}`, { headers: HEADERS })
       if (res.ok) {
-        await res.json() // validates it's JSON
-        return { score: 8, maxScore: 8, found: true, method: "well-known" }
+        await res.json()
+        return { status: "FOUND", evidence: `${baseUrl}${path}` }
       }
     } catch { /* continue */ }
   }
@@ -24,22 +21,20 @@ async function checkOAuth(baseUrl: string): Promise<OAuthResult> {
       if (res.ok) {
         const html = await res.text()
         if (/oauth\s*2\.?0|openid\s+connect/i.test(html)) {
-          return { score: 4, maxScore: 8, found: true, method: "docs" }
+          return { status: "UNCERTAIN", evidence: `OAuth 2.0 mentioned at ${baseUrl}${path}` }
         }
       }
     } catch { /* continue */ }
   }
-  return { score: 0, maxScore: 8, found: false, method: null }
+  return { status: "NOT_FOUND" }
 }
 
-async function checkApiKeySupport(baseUrl: string): Promise<ApiKeyResult> {
-  const API_KEY_PATTERN = /api\s*key|api\s*token|access\s+token|personal\s+access\s+token|secret\s+key/i
-
+async function checkApiKeySupport(baseUrl: string): Promise<Phase1Result> {
   for (const path of ["/settings/api", "/account/api", "/api-keys"]) {
     try {
       const res = await fetchWithTimeout(`${baseUrl}${path}`, { headers: HEADERS })
       if (res.ok && API_KEY_PATTERN.test(await res.text())) {
-        return { score: 6, maxScore: 6, found: true }
+        return { status: "FOUND", evidence: `${baseUrl}${path}` }
       }
     } catch { /* continue */ }
   }
@@ -47,11 +42,11 @@ async function checkApiKeySupport(baseUrl: string): Promise<ApiKeyResult> {
     try {
       const res = await fetchWithTimeout(`${baseUrl}${path}`, { headers: HEADERS })
       if (res.ok && API_KEY_PATTERN.test(await res.text())) {
-        return { score: 3, maxScore: 6, found: true }
+        return { status: "UNCERTAIN", evidence: `API key mentioned at ${baseUrl}${path}` }
       }
     } catch { /* continue */ }
   }
-  return { score: 0, maxScore: 6, found: false }
+  return { status: "NOT_FOUND" }
 }
 
 async function findApiEndpoint(baseUrl: string): Promise<string | undefined> {
@@ -64,41 +59,36 @@ async function findApiEndpoint(baseUrl: string): Promise<string | undefined> {
   return undefined
 }
 
-async function checkCors(baseUrl: string): Promise<CorsResult> {
+async function checkCors(baseUrl: string): Promise<Phase1Result> {
   const endpoint = await findApiEndpoint(baseUrl)
-  if (!endpoint) return { score: 0, maxScore: 6, policy: null, status: "no_api_found" }
-
+  if (!endpoint) return { status: "NOT_FOUND" }
   try {
     const res = await fetchWithTimeout(endpoint, {
       method: "OPTIONS",
-      headers: {
-        ...HEADERS,
-        "Origin": "https://test.example.com",
-        "Access-Control-Request-Method": "GET",
-      },
+      headers: { ...HEADERS, "Origin": "https://test.example.com", "Access-Control-Request-Method": "GET" },
     })
     const origin = res.headers.get("access-control-allow-origin")
-    if (origin === "*") return { score: 6, maxScore: 6, policy: "*" }
-    if (origin) return { score: 3, maxScore: 6, policy: origin }
-    return { score: 1, maxScore: 6, policy: null }
+    if (origin === "*") return { status: "FOUND", rawData: { policy: "*" } }
+    if (origin) return { status: "UNCERTAIN", rawData: { policy: origin } }
+    return { status: "UNCERTAIN", rawData: { policy: null } }
   } catch {
-    return { score: 1, maxScore: 6, policy: null }
+    return { status: "UNCERTAIN", rawData: { policy: null } }
   }
 }
 
-export async function checkAuthSecurity(baseUrl: string): Promise<BlockResult> {
+export async function checkAuthSecurityPhase1(
+  baseUrl: string,
+  _homepageHtml: string
+): Promise<AuthSecurityPhase1Results> {
   const [oauthRes, apiKeyRes, corsRes] = await Promise.allSettled([
     checkOAuth(baseUrl),
     checkApiKeySupport(baseUrl),
     checkCors(baseUrl),
   ])
 
-  const checks = {
-    oauth: oauthRes.status === "fulfilled" ? oauthRes.value : { score: 0, maxScore: 8, found: false, method: null as null },
-    apiKeySupport: apiKeyRes.status === "fulfilled" ? apiKeyRes.value : { score: 0, maxScore: 6, found: false },
-    corsPolicy: corsRes.status === "fulfilled" ? corsRes.value : { score: 0, maxScore: 6, policy: null },
+  return {
+    oauth: oauthRes.status === "fulfilled" ? oauthRes.value : { status: "NOT_FOUND" },
+    apiKeySupport: apiKeyRes.status === "fulfilled" ? apiKeyRes.value : { status: "NOT_FOUND" },
+    corsPolicy: corsRes.status === "fulfilled" ? corsRes.value : { status: "NOT_FOUND" },
   }
-
-  const score = checks.oauth.score + checks.apiKeySupport.score + checks.corsPolicy.score
-  return { score, maxScore: 20, checks }
 }

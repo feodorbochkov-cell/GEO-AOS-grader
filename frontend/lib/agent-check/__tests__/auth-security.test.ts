@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { checkAuthSecurity } from "../auth-security"
+import { checkAuthSecurityPhase1 } from "../auth-security"
 import * as utils from "../utils"
 
 vi.mock("../utils", async importOriginal => {
@@ -10,76 +10,93 @@ vi.mock("../utils", async importOriginal => {
 const mockFetch = vi.mocked(utils.fetchWithTimeout)
 
 function ok(body: unknown, headers: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ...headers },
-  })
+  return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json", ...headers } })
 }
-function notFound(): Response {
-  return new Response("Not Found", { status: 404 })
-}
+function okText(body: string): Response { return new Response(body, { status: 200 }) }
+function notFound(): Response { return new Response("Not Found", { status: 404 }) }
 
 beforeEach(() => { mockFetch.mockReset() })
 
-describe("OAuth detection", () => {
-  it("awards 8 pts when /.well-known/oauth-authorization-server returns valid JSON", async () => {
+describe("oauth", () => {
+  it("returns FOUND when /.well-known/oauth-authorization-server is valid JSON", async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes("oauth-authorization-server")) return Promise.resolve(ok({ issuer: "https://example.com" }))
       return Promise.resolve(notFound())
     })
-    const result = await checkAuthSecurity("https://example.com")
-    expect(result.checks.oauth.score).toBe(8)
-    expect((result.checks.oauth as unknown as { method: string }).method).toBe("well-known")
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.oauth.status).toBe("FOUND")
+    expect(r.oauth.evidence).toContain("well-known")
   })
 
-  it("awards 4 pts when OAuth 2.0 mentioned in /developers HTML", async () => {
+  it("returns UNCERTAIN when OAuth 2.0 mentioned in /developers docs", async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes("/developers")) return Promise.resolve(
-        new Response("<p>We support OAuth 2.0 flows.</p>", { status: 200 })
-      )
+      if (url.includes("/developers")) return Promise.resolve(okText("<p>We support OAuth 2.0 flows.</p>"))
       return Promise.resolve(notFound())
     })
-    const result = await checkAuthSecurity("https://example.com")
-    expect(result.checks.oauth.score).toBe(4)
-    expect((result.checks.oauth as unknown as { method: string }).method).toBe("docs")
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.oauth.status).toBe("UNCERTAIN")
   })
 
-  it("awards 0 pts when OAuth not found", async () => {
+  it("returns NOT_FOUND when no OAuth signal", async () => {
     mockFetch.mockResolvedValue(notFound())
-    const result = await checkAuthSecurity("https://example.com")
-    expect(result.checks.oauth.score).toBe(0)
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.oauth.status).toBe("NOT_FOUND")
   })
 })
 
-describe("CORS detection", () => {
-  it("awards 6 pts when Access-Control-Allow-Origin is *", async () => {
+describe("apiKeySupport", () => {
+  it("returns FOUND when /settings/api page mentions API key", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes("/settings/api")) return Promise.resolve(okText("Your API key: xxxx"))
+      return Promise.resolve(notFound())
+    })
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.apiKeySupport.status).toBe("FOUND")
+  })
+
+  it("returns UNCERTAIN when API key mentioned in /settings page", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes("/settings") && !url.includes("/api")) return Promise.resolve(okText("Manage your API key here."))
+      return Promise.resolve(notFound())
+    })
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.apiKeySupport.status).toBe("UNCERTAIN")
+  })
+
+  it("returns NOT_FOUND when no API key signal", async () => {
+    mockFetch.mockResolvedValue(notFound())
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.apiKeySupport.status).toBe("NOT_FOUND")
+  })
+})
+
+describe("corsPolicy", () => {
+  it("returns FOUND with policy=* when CORS is wildcard", async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes("/api")) return Promise.resolve(
         new Response(null, { status: 200, headers: { "Access-Control-Allow-Origin": "*" } })
       )
       return Promise.resolve(notFound())
     })
-    const result = await checkAuthSecurity("https://example.com")
-    expect(result.checks.corsPolicy.score).toBe(6)
-    expect((result.checks.corsPolicy as unknown as { policy: string }).policy).toBe("*")
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.corsPolicy.status).toBe("FOUND")
+    expect((r.corsPolicy.rawData as { policy: string }).policy).toBe("*")
   })
 
-  it("awards 3 pts when Access-Control-Allow-Origin is a specific domain", async () => {
+  it("returns UNCERTAIN when CORS is a specific origin", async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes("/api")) return Promise.resolve(
         new Response(null, { status: 200, headers: { "Access-Control-Allow-Origin": "https://app.example.com" } })
       )
       return Promise.resolve(notFound())
     })
-    const result = await checkAuthSecurity("https://example.com")
-    expect(result.checks.corsPolicy.score).toBe(3)
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.corsPolicy.status).toBe("UNCERTAIN")
   })
-})
 
-describe("checkAuthSecurity totals", () => {
-  it("maxScore is 20", async () => {
+  it("returns NOT_FOUND when no API endpoint and no CORS headers", async () => {
     mockFetch.mockResolvedValue(notFound())
-    const result = await checkAuthSecurity("https://example.com")
-    expect(result.maxScore).toBe(20)
+    const r = await checkAuthSecurityPhase1("https://example.com", "")
+    expect(r.corsPolicy.status).toBe("NOT_FOUND")
   })
 })
