@@ -14,6 +14,34 @@ body {
   background-size: 42px 42px;
 }
 
+/* --- Mistral-style landing utilities --- */
+
+/* Faint dotted grid overlay used inside the orange pixel hero */
+.pixel-grid-lines {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  background-size: 11.111% 11.111%;
+}
+
+/* Small black registration tick used at grid intersections */
+.corner-tick {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #0d0d0d;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes float-diamond {
+  0%, 100% { transform: rotate(45deg) translateY(0); }
+  50% { transform: rotate(45deg) translateY(-8px); }
+}
+
+.animate-diamond {
+  animation: float-diamond 6s ease-in-out infinite;
+}
+
 .animate-rise {
   animation: rise-in 700ms ease-out both;
 }

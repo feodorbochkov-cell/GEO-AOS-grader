@@ -34,20 +34,20 @@ export default function UrlForm() {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="example.com or https://example.com"
-          className="flex-1 rounded-lg border border-neutral-300 px-4 py-3 text-base outline-none focus:border-neutral-900"
+          className="flex-1 border border-ink/20 bg-cream px-4 py-3 text-base text-ink outline-none transition focus:border-orange"
           required
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading || !url.trim()}
-          className="rounded-lg bg-neutral-900 px-6 py-3 text-base font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-ink px-6 py-3 text-base font-medium text-cream transition-colors hover:bg-orange disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Starting…" : "Analyze"}
         </button>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <p className="text-xs text-neutral-500">
+      {error && <p className="text-sm text-orange-red">{error}</p>}
+      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/50">
         Analysis takes ~15 seconds + ~60 seconds for the report.
       </p>
     </form>
