@@ -24,7 +24,7 @@ export async function callBrowserService(url: string): Promise<BrowserOperabilit
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(150000),
     })
     if (!res.ok) return MOCK
     return await res.json() as BrowserOperabilityResult

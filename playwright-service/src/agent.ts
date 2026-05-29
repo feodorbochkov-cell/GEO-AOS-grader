@@ -105,6 +105,7 @@ export async function runBrowserAgent(
   }
 
   // Max turns reached — prompt for final JSON
+  // Max turns reached — prompt for final JSON
   messages.push({ role: "user", content: "You have reached the maximum number of steps. Emit your final JSON assessment now, with no other text." })
   const final = await client.chat.completions.create({
     model: MODEL,

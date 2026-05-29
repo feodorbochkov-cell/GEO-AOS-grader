@@ -3,7 +3,7 @@ import OpenAI from "openai"
 import { runBrowserAgent } from "./agent"
 import type { BrowserOperabilityResult, AgentAssessment } from "./types"
 
-const SCAN_TIMEOUT_MS = 45_000
+const SCAN_TIMEOUT_MS = 120_000
 
 const MAX_SCORES: Record<keyof AgentAssessment["checks"], number> = {
   botBlocking: 6,
