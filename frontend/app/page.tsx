@@ -1,130 +1,223 @@
-import UrlForm from "@/components/UrlForm";
+import AgentReportForm from "./agent-report/AgentReportForm"
 
-const workflow = [
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const scoringBlocks = [
   {
-    step: "01",
-    title: "Read the site",
-    text: "We fetch the homepage and key sections to understand the brand, market, products, and competitors.",
+    name: "Machine Interface",
+    pts: 30,
+    desc: "MCP servers, OpenAPI specs, and structured API surfaces that agents can discover and call.",
   },
   {
-    step: "02",
-    title: "Generate demand",
-    text: "We generate 10 commercial AI queries that a buyer realistically asks before making a decision.",
+    name: "Browser Operability",
+    pts: 25,
+    desc: "Whether an AI browser agent can navigate, interact, and complete tasks on your site.",
   },
   {
-    step: "03",
-    title: "Check the results",
-    text: "We run the queries through Perplexity Sonar Pro and capture mentions, citations, sources, and sentiment.",
+    name: "Agent Discovery",
+    pts: 25,
+    desc: "llms.txt, robots.txt agent permissions, and Schema.org markup that orient AI agents.",
   },
-];
+  {
+    name: "Auth & Security",
+    pts: 20,
+    desc: "OAuth flows, CORS policy, and security posture for programmatic agent access.",
+  },
+]
 
-const reportSignals = [
-  "AEO Score 0-100",
-  "Citation Rate",
-  "Mention Rate",
-  "Source Share of Voice",
-  "Breakdown by 10 prompts",
-  "Actionable insights",
-];
+const detectionSignals = [
+  "MCP servers",
+  "OpenAPI specs",
+  "OAuth support",
+  "CORS policy",
+  "llms.txt",
+  "robots.txt permissions",
+  "Schema.org markup",
+  "SDK documentation",
+]
 
-const sourceRows = [
-  { domain: "brand.com", value: 38, tone: "Brand" },
-  { domain: "reviewhub.com", value: 24, tone: "Source" },
-  { domain: "competitor.com", value: 18, tone: "Competitor" },
-  { domain: "media.com", value: 12, tone: "Media" },
-];
+const agentReadinessItems = [
+  "MCP endpoint reachable",
+  "OpenAPI spec found",
+  "OAuth flow supported",
+]
+
+const navLinks = ["The Shift", "Scoring", "Signals", "FAQ"]
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   return (
-    <main className="landing-surface min-h-screen overflow-hidden bg-[#f6f1e8] text-[#17130f]">
-      <section className="relative border-b border-[#17130f]/10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(176,53,26,0.18),transparent_32%),linear-gradient(135deg,rgba(23,19,15,0.08)_0,transparent_38%)]" />
-        <div className="relative mx-auto grid min-h-[92vh] max-w-7xl gap-10 px-5 py-6 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:px-10 lg:py-8">
-          <div className="flex flex-col justify-between gap-12">
-            <nav className="flex items-center justify-between text-xs uppercase text-[#17130f]/60">
-              <span className="font-semibold text-[#17130f]">AEO Grader</span>
-              <span>Single-shot AI visibility audit</span>
-            </nav>
+    <main className="min-h-screen bg-cream font-display text-ink antialiased">
 
-            <div className="max-w-3xl animate-rise space-y-8">
-              <div className="inline-flex border border-[#17130f]/20 bg-[#fffaf1]/70 px-3 py-2 text-xs uppercase text-[#17130f]/70 shadow-sm backdrop-blur">
-                Perplexity visibility report — no subscription required
-              </div>
-              <div className="space-y-5">
-                <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] sm:text-7xl lg:text-8xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-                  See how AI search perceives your brand
-                </h1>
-                <p className="max-w-2xl text-lg leading-8 text-[#413831] sm:text-xl">
-                  AEO Grader runs your site through Perplexity search scenarios and
-                  returns a report: where your brand is cited, where it loses to
-                  competitors, and which sources shape the results.
-                </p>
-              </div>
+      {/* ── Nav ── */}
+      <header className="sticky top-0 z-30 border-b border-ink/12 bg-cream/90 backdrop-blur">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8 lg:px-10">
+          <div className="flex items-center gap-3">
+            <span className="flex h-6 w-6 items-center justify-center bg-orange text-xs font-bold text-cream">
+              A
+            </span>
+            <span className="text-sm font-bold tracking-tight">AOS Grader</span>
+          </div>
+          <div className="hidden items-center gap-7 md:flex">
+            {navLinks.map((link) => (
+              <span
+                key={link}
+                className="cursor-pointer text-sm text-ink/70 transition-colors hover:text-ink"
+              >
+                {link}
+              </span>
+            ))}
+          </div>
+          <a
+            href="#run"
+            className="bg-ink px-5 py-2.5 text-sm font-medium text-cream transition-colors hover:bg-orange"
+          >
+            Run scan
+          </a>
+        </nav>
+      </header>
 
-              <div className="max-w-2xl border border-[#17130f]/15 bg-[#fffaf1]/85 p-4 shadow-[0_24px_80px_rgba(23,19,15,0.12)] backdrop-blur sm:p-6">
-                <UrlForm />
-              </div>
+      {/* ── Hero ── */}
+      <section className="border-b border-ink/12">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-20">
+          <div className="space-y-8">
+            <span className="inline-flex border border-ink/15 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-ink/65">
+              Agent operability scan — no signup
+            </span>
+            <h1 className="text-5xl font-bold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+              See how agents feel when interacting with your platform.
+            </h1>
+            <p className="max-w-xl text-lg leading-8 text-ink/70">
+              AOS Grader probes your platform for machine-readable interfaces,
+              agent discovery signals, and authentication flows — then scores
+              how ready it is for AI agents to operate.
+            </p>
+            <div id="run" className="border border-ink/15 bg-cream p-4 sm:p-5">
+              <AgentReportForm />
             </div>
-
-            <div className="grid max-w-3xl grid-cols-3 border-y border-[#17130f]/15 text-sm text-[#4b4037]">
-              <div className="py-4 pr-4">
-                <div className="text-2xl font-semibold text-[#17130f]">10</div>
-                <div>AI queries</div>
-              </div>
-              <div className="border-x border-[#17130f]/15 px-4 py-4">
-                <div className="text-2xl font-semibold text-[#17130f]">60-90s</div>
-                <div>to report</div>
-              </div>
-              <div className="py-4 pl-4">
-                <div className="text-2xl font-semibold text-[#17130f]">0-100</div>
-                <div>AEO Score</div>
-              </div>
+            <div className="grid max-w-lg grid-cols-3 border border-ink/15">
+              {[
+                ["0–100", "AOS Score"],
+                ["4", "blocks checked"],
+                ["~30s", "to report"],
+              ].map(([value, label], i) => (
+                <div
+                  key={label}
+                  className={`px-4 py-4 ${i > 0 ? "border-l border-ink/15" : ""}`}
+                >
+                  <div className="text-2xl font-bold">{value}</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/55">
+                    {label}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-
-          <div className="flex items-center lg:justify-end">
-            <ReportPreview />
-          </div>
+          <PixelHero />
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 lg:grid-cols-[0.75fr_1.25fr] lg:px-10 lg:py-24">
-        <div className="space-y-5">
-          <p className="text-sm uppercase text-[#9d3d21]">Methodology</p>
-          <h2 className="text-4xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-            The audit mirrors a real buyer's journey
-          </h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {workflow.map((item) => (
-            <article
-              key={item.step}
-              className="border border-[#17130f]/15 bg-[#fffaf1] p-6 shadow-sm"
-            >
-              <div className="mb-10 text-sm text-[#9d3d21]">{item.step}</div>
-              <h3 className="mb-3 text-xl font-semibold">{item.title}</h3>
-              <p className="leading-7 text-[#5c5148]">{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-y border-[#17130f]/10 bg-[#17130f] text-[#fff7ea]">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-24">
-          <div className="space-y-6">
-            <p className="text-sm uppercase text-[#d9a441]">What&apos;s in the report</p>
-            <h2 className="text-4xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-              Not just a score — a map of influence sources
+      {/* ── The Shift ── */}
+      <section className="border-b border-ink/12">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
+          <div className="mb-12 max-w-2xl space-y-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
+              Why operability
+            </span>
+            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Being found isn&apos;t enough. Agents need to act.
             </h2>
-            <p className="max-w-xl text-lg leading-8 text-[#d8cbbb]">
-              The report shows why the AI answer formed the way it did: which
-              domains are cited, where your brand appears, and where competitors
-              capture visibility.
+          </div>
+          <div className="grid border border-ink/12 md:grid-cols-2">
+            <div className="space-y-4 p-8">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/45">
+                AEO / SEO
+              </span>
+              <h3 className="text-2xl font-bold">Can AI find you?</h3>
+              <p className="leading-7 text-ink/65">
+                Search optimization ensures your brand appears in AI-generated
+                answers and citations. Necessary, but no longer sufficient.
+              </p>
+            </div>
+            <div className="space-y-4 border-t border-ink/12 bg-orange/5 p-8 md:border-l md:border-t-0">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
+                AOS
+              </span>
+              <h3 className="text-2xl font-bold">Can AI use you?</h3>
+              <p className="leading-7 text-ink/65">
+                Agent operability determines whether an AI agent can
+                authenticate, discover your APIs, and complete tasks — not just
+                reference your name.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4 Scoring Blocks ── */}
+      <section className="border-b border-ink/12">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
+          <div className="mb-12 max-w-2xl space-y-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
+              Scoring
+            </span>
+            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Four dimensions of agent readiness
+            </h2>
+          </div>
+          <div className="grid border border-ink/12 md:grid-cols-2">
+            {scoringBlocks.map((block, i) => (
+              <article
+                key={block.name}
+                className={`p-7 ${i % 2 !== 0 ? "md:border-l md:border-ink/12" : ""} ${i >= 2 ? "border-t border-ink/12" : ""}`}
+              >
+                <div className="mb-6 flex items-start justify-between">
+                  <PixelGlyph index={i} />
+                  <span className="border border-orange/30 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
+                    {block.pts} pts
+                  </span>
+                </div>
+                <h3 className="mb-3 text-xl font-bold">{block.name}</h3>
+                <p className="leading-7 text-ink/65">{block.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── What we detect — dark navy band ── */}
+      <section className="border-b border-ink/12 bg-navy text-cream">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
+          <div className="mx-auto mb-12 max-w-3xl space-y-5 text-center">
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange-bright">
+              What we detect
+            </span>
+            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Concrete signals, not guesswork
+            </h2>
+            <p className="mx-auto max-w-xl text-lg leading-8 text-cream/70">
+              Every check targets a real signal an agent would encounter —
+              machine-readable interfaces, discovery files, and authentication
+              endpoints.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#fff7ea]/15 bg-[#fff7ea]/15">
-            {reportSignals.map((signal) => (
-              <div key={signal} className="bg-[#17130f] p-5 text-lg font-medium">
+          <div className="grid border border-cream/15 sm:grid-cols-2 lg:grid-cols-4">
+            {detectionSignals.map((signal, i) => (
+              <div
+                key={signal}
+                className={[
+                  "flex items-center gap-3 p-6 text-base font-medium",
+                  i > 0 ? "border-t border-cream/15" : "",
+                  i % 2 !== 0 ? "sm:border-l sm:border-cream/15 sm:border-t-0" : "",
+                  i % 2 === 0 && i >= 2 ? "sm:border-t border-cream/15" : "",
+                  i % 4 !== 0 ? "lg:border-l lg:border-cream/15 lg:border-t-0" : "",
+                  i % 4 === 0 && i >= 4 ? "lg:border-t border-cream/15" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <span className="h-2 w-2 shrink-0 bg-orange" />
                 {signal}
               </div>
             ))}
@@ -132,113 +225,152 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-24">
-        <div className="space-y-6">
-          <p className="text-sm uppercase text-[#9d3d21]">Who it&apos;s for</p>
-          <h2 className="text-4xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-            For teams that need a fast signal before SEO, PR, and content work
-          </h2>
-          <p className="max-w-2xl text-lg leading-8 text-[#5c5148]">
-            Use the one-shot audit as an entry-level diagnostic: spot gaps,
-            benchmark against competitors, and identify which pages or
-            publications to strengthen first.
-          </p>
-        </div>
-        <div className="border border-[#17130f]/15 bg-[#fffaf1] p-6 shadow-sm">
-          <div className="mb-8 flex items-center justify-between border-b border-[#17130f]/10 pb-4">
-            <span className="text-sm uppercase text-[#17130f]/55">Readiness</span>
-            <span className="bg-[#d9a441] px-3 py-1 text-sm font-semibold text-[#17130f]">
-              Agent Friendly
-            </span>
-          </div>
+      {/* ── Who it's for + readiness card ── */}
+      <section className="border-b border-ink/12">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-10 lg:py-24">
           <div className="space-y-5">
-            {["Brand found in answers", "Sources cited consistently", "Competitive gaps identified"].map(
-              (item) => (
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
+              Who it&apos;s for
+            </span>
+            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              For platforms that want to be agent-ready
+            </h2>
+            <p className="max-w-2xl text-lg leading-8 text-ink/65">
+              API-first SaaS, developer tools, and marketplaces that expect AI
+              agents to become a primary user class. Use AOS as an instant
+              diagnostic before you invest in agent integrations.
+            </p>
+          </div>
+          <div className="border border-ink/15 bg-cream">
+            <div className="flex items-center justify-between border-b border-ink/12 px-6 py-4">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/55">
+                Sample verdict
+              </span>
+              <span className="bg-orange px-3 py-1 text-sm font-semibold text-cream">
+                Agent Ready
+              </span>
+            </div>
+            <div className="space-y-5 p-6">
+              {agentReadinessItems.map((item) => (
                 <div key={item} className="flex items-center gap-4">
-                  <span className="h-3 w-3 bg-[#9d3d21]" />
+                  <span className="h-3 w-3 bg-orange" />
                   <span className="text-lg">{item}</span>
                 </div>
-              ),
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="px-5 pb-20 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl border border-[#17130f]/15 bg-[#fffaf1] p-6 shadow-[0_24px_80px_rgba(23,19,15,0.10)] sm:p-10">
-          <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+      {/* ── Final CTA ── */}
+      <section className="px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-7xl border border-ink/15 bg-cream p-7 sm:p-12">
+          <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
             <div className="space-y-4">
-              <p className="text-sm uppercase text-[#9d3d21]">Run an audit</p>
-              <h2 className="text-3xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-                Enter your domain and get your first AI visibility snapshot
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
+                Run a scan
+              </span>
+              <h2 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+                Find out if your platform is ready for the agent era
               </h2>
             </div>
-            <UrlForm />
+            <AgentReportForm />
           </div>
         </div>
       </section>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-ink/12">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-5 py-8 sm:flex-row sm:items-center sm:px-8 lg:px-10">
+          <span className="text-sm font-bold tracking-tight">AOS Grader</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/45">
+            Agent operability scan
+          </span>
+        </div>
+      </footer>
     </main>
-  );
+  )
 }
 
-function ReportPreview() {
-  return (
-    <div className="animate-rise-delayed w-full max-w-xl border border-[#17130f]/15 bg-[#fffaf1] p-4 shadow-[0_34px_100px_rgba(23,19,15,0.18)] sm:p-6">
-      <div className="mb-6 flex items-start justify-between gap-4 border-b border-[#17130f]/10 pb-5">
-        <div>
-          <p className="text-xs uppercase text-[#17130f]/50">Report preview</p>
-          <h2 className="mt-2 text-2xl font-semibold">brand.com</h2>
-        </div>
-        <div className="text-right">
-          <div className="text-5xl font-semibold leading-none [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-            74
-          </div>
-          <p className="mt-1 text-xs uppercase text-[#9d3d21]">AEO Score</p>
-        </div>
-      </div>
+// ─── PixelHero ────────────────────────────────────────────────────────────────
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          ["Citation", "42%"],
-          ["Mention", "68%"],
-          ["Sentiment", "Mixed"],
-        ].map(([label, value]) => (
-          <div key={label} className="border border-[#17130f]/10 bg-white/50 p-4">
-            <p className="text-xs uppercase text-[#17130f]/50">{label}</p>
-            <p className="mt-3 text-2xl font-semibold">{value}</p>
-          </div>
+const PIXEL_PALETTE: Record<string, string> = {
+  b: "bg-orange-bright",
+  o: "bg-orange",
+  r: "bg-orange-red",
+  d: "bg-orange-deep",
+  ".": "bg-transparent",
+}
+
+const PIXEL_PATTERN = [
+  ".", "o", "b", "o", "r", "o", "d", "o", ".",
+  "o", "r", "o", "d", "b", "o", "r", "o", "b",
+  "b", "o", "r", "o", "o", "d", "o", "b", "o",
+  "o", "d", "o", "b", "o", "r", "o", "o", "r",
+  "r", "o", "b", "o", "d", "o", "b", "o", "o",
+  "o", "b", "o", "r", "o", "o", "d", "o", "b",
+  ".", "o", "d", "o", "b", "o", "r", "o", ".",
+]
+
+const probeRows = [
+  { label: "MCP endpoint", status: "Found", ok: true },
+  { label: "OpenAPI spec", status: "Found", ok: true },
+  { label: "OAuth support", status: "Missing", ok: false },
+]
+
+function PixelHero() {
+  return (
+    <div className="relative aspect-square w-full overflow-hidden border border-ink/12 bg-orange">
+      <div className="grid h-full w-full grid-cols-9">
+        {PIXEL_PATTERN.map((key, i) => (
+          <div key={i} className={PIXEL_PALETTE[key] ?? "bg-orange"} />
         ))}
       </div>
-
-      <div className="mt-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Source Share of Voice</h3>
-          <span className="text-xs uppercase text-[#17130f]/45">Top domains</span>
-        </div>
-        <div className="space-y-3">
-          {sourceRows.map((row) => (
-            <div key={row.domain} className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>{row.domain}</span>
-                <span className="text-[#17130f]/55">{row.tone}</span>
-              </div>
-              <div className="h-2 bg-[#17130f]/10">
-                <div
-                  className="h-full bg-[#9d3d21]"
-                  style={{ width: `${row.value}%` }}
-                />
-              </div>
+      <div className="pixel-grid-lines pointer-events-none absolute inset-0" />
+      <span className="animate-diamond absolute right-[14%] top-[16%] h-9 w-9 bg-orange-deep" />
+      <span className="absolute bottom-[20%] left-[16%] h-7 w-7 rotate-45 bg-orange-red" />
+      <span className="absolute bottom-3 left-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70">
+        AOS Grader
+      </span>
+      <span className="absolute right-3 top-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70">
+        Operability
+      </span>
+      <div className="absolute left-1/2 top-1/2 w-[80%] max-w-sm -translate-x-1/2 -translate-y-1/2 border border-ink/15 bg-cream p-4 shadow-[0_24px_60px_rgba(13,13,13,0.25)]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink/45">
+          Capability probe
+        </p>
+        <p className="mt-2 leading-7 text-ink">stripe.com</p>
+        <div className="mt-4 space-y-3">
+          {probeRows.map((row) => (
+            <div key={row.label} className="flex items-center justify-between text-xs">
+              <span className="text-ink/70">{row.label}</span>
+              <span className={row.ok ? "font-medium text-orange" : "text-ink/40"}>
+                {row.status}
+              </span>
             </div>
           ))}
         </div>
       </div>
-
-      <div className="mt-6 border border-[#17130f]/10 bg-[#17130f] p-4 text-[#fff7ea]">
-        <p className="text-xs uppercase text-[#fff7ea]/50">Prompt sample</p>
-        <p className="mt-3 leading-7">
-          Which services should I choose for automating e-commerce support?
-        </p>
-      </div>
     </div>
-  );
+  )
+}
+
+// ─── PixelGlyph ───────────────────────────────────────────────────────────────
+
+function PixelGlyph({ index }: { index: number }) {
+  const shades = ["bg-orange", "bg-orange-red", "bg-orange-deep", "bg-orange-bright"]
+  const cells = [
+    [1, 1, 0, 1],
+    [0, 1, 1, 0],
+    [1, 0, 1, 1],
+    [1, 1, 1, 0],
+  ][index % 4]
+  const shade = shades[index % 4]
+  return (
+    <div className="grid grid-cols-2 gap-0.5">
+      {cells.map((on, i) => (
+        <span key={i} className={`h-2 w-2 ${on ? shade : "bg-ink/10"}`} />
+      ))}
+    </div>
+  )
 }
