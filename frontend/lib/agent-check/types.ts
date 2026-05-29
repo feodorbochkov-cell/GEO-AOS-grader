@@ -35,16 +35,18 @@ export type SSEEvent =
   | { type: "error"; message: string }
 
 export interface BrowserOperabilityChecks {
-  semanticHtml: CheckResult
-  ariaAttributes: CheckResult
-  stableUrls: CheckResult
-  keyboardNavigation: CheckResult
-  noCaptcha: CheckResult
+  botBlocking: CheckResult
+  navigationWorking: CheckResult
+  formsInteractable: CheckResult
+  authFlowReachable: CheckResult
+  noJsWall: CheckResult
 }
 
 export interface BrowserOperabilityResult extends BlockResult {
   status: "pending" | "complete"
   checks: Record<keyof BrowserOperabilityChecks, CheckResult>
+  blockers?: string[]
+  sessionSummary?: string
 }
 
 // ── Phase 1 ──────────────────────────────────────────────────────────────────
