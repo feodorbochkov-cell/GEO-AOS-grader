@@ -101,7 +101,8 @@ export async function scanUrl(url: string): Promise<BrowserOperabilityResult> {
       ),
     ])
     return assessmentToResult(assessment)
-  } catch {
+  } catch (err) {
+    console.error("[scanner] scan error:", err)
     return buildFailedResult("Scan timed out or encountered an error", ["Scan could not be completed within the time limit"])
   } finally {
     await browser.close().catch(() => undefined)

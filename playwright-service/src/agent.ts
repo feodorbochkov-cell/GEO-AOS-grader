@@ -4,7 +4,7 @@ import type { Page } from "playwright"
 import { BROWSER_TOOLS, executeTool } from "./tools"
 import type { AgentAssessment } from "./types"
 
-const MODEL = "anthropic/claude-haiku-4-5-20251001"
+const MODEL = "anthropic/claude-haiku-4-5"
 
 export const FALLBACK_ASSESSMENT: AgentAssessment = {
   checks: {
