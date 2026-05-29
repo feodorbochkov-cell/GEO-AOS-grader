@@ -34,6 +34,29 @@ describe("parseAssessment", () => {
     expect(result.checks.navigationWorking.found).toBe(true)
   })
 
+  it("parses JSON when prose precedes a fenced block", () => {
+    const wrapped = "Excellent! All checks complete. Here's my assessment:\n\n```json\n" + JSON.stringify(VALID_ASSESSMENT) + "\n```"
+    const result = parseAssessment(wrapped)
+    expect(result.checks.botBlocking.score).toBe(6)
+    expect(result.sessionSummary).toBe("Site is fully navigable by an AI agent")
+  })
+
+  it("parses JSON when prose surrounds a bare object", () => {
+    const wrapped = "Here is the result: " + JSON.stringify(VALID_ASSESSMENT) + " Let me know if you need anything else."
+    const result = parseAssessment(wrapped)
+    expect(result.checks.noJsWall.score).toBe(4)
+  })
+
+  it("parses JSON containing braces inside string values", () => {
+    const withBraces = {
+      ...VALID_ASSESSMENT,
+      sessionSummary: "Found a template literal ${foo} and a JSON snippet {\"a\":1} in page text",
+    }
+    const result = parseAssessment("```json\n" + JSON.stringify(withBraces) + "\n```")
+    expect(result.checks.botBlocking.score).toBe(6)
+    expect(result.sessionSummary).toContain("template literal")
+  })
+
   it("returns fallback for invalid JSON", () => {
     const result = parseAssessment("not valid json at all")
     expect(result.sessionSummary).toBe("Scan failed or timed out")

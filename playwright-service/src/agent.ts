@@ -43,11 +43,40 @@ IMPORTANT scoring rules:
 - botBlocking: found=true means blocking WAS detected (score=0). found=false means no blocking (score=6).
 - All other checks: found=true means the capability works correctly (full score). found=false means it failed or was not found (score=0).`
 
+// Extract the first balanced {...} JSON object from arbitrary text.
+// The model often wraps its JSON in prose ("Here's my assessment:") and/or
+// markdown fences, so we cannot assume the whole string is JSON. Scan for the
+// first "{" and walk the string tracking brace depth (ignoring braces inside
+// strings) until the matching "}" closes it.
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf("{")
+  if (start === -1) return null
+  let depth = 0
+  let inString = false
+  let escaped = false
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (ch === "\\") escaped = true
+      else if (ch === '"') inString = false
+      continue
+    }
+    if (ch === '"') inString = true
+    else if (ch === "{") depth++
+    else if (ch === "}") {
+      depth--
+      if (depth === 0) return text.slice(start, i + 1)
+    }
+  }
+  return null
+}
+
 export function parseAssessment(text: string): AgentAssessment {
   try {
-    const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim()
-    if (!clean) return FALLBACK_ASSESSMENT
-    const parsed = JSON.parse(clean) as AgentAssessment
+    const candidate = extractJsonObject(text)
+    if (!candidate) return FALLBACK_ASSESSMENT
+    const parsed = JSON.parse(candidate) as AgentAssessment
     if (!parsed?.checks || typeof parsed.checks !== "object") return FALLBACK_ASSESSMENT
     const required = ["botBlocking", "navigationWorking", "formsInteractable", "authFlowReachable", "noJsWall"] as const
     for (const key of required) {
@@ -104,7 +133,6 @@ export async function runBrowserAgent(
     messages.push(...toolResults)
   }
 
-  // Max turns reached — prompt for final JSON
   // Max turns reached — prompt for final JSON
   messages.push({ role: "user", content: "You have reached the maximum number of steps. Emit your final JSON assessment now, with no other text." })
   const final = await client.chat.completions.create({
