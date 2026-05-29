@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import Anthropic from "@anthropic-ai/sdk"
+import OpenAI from "openai"
 import { runBrowserAgent } from "./agent"
 import type { BrowserOperabilityResult, AgentAssessment } from "./types"
 
@@ -76,12 +76,16 @@ export async function scanUrl(url: string): Promise<BrowserOperabilityResult> {
     )
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
-    return buildFailedResult("Service misconfigured: ANTHROPIC_API_KEY not set", ["Internal configuration error"])
+    return buildFailedResult("Service misconfigured: OPENROUTER_API_KEY not set", ["Internal configuration error"])
   }
 
-  const client = new Anthropic({ apiKey })
+  const client = new OpenAI({
+    apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+  })
+
   const browser = await chromium.launch({ headless: true }).catch(() => null)
   if (!browser) {
     return buildFailedResult("Failed to launch browser", ["Internal browser error"])

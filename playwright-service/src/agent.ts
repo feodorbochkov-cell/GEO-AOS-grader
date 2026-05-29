@@ -1,8 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk"
-import type { MessageParam, ToolResultBlockParam } from "@anthropic-ai/sdk/resources/messages"
+import OpenAI from "openai"
+import type { ChatCompletionMessageParam } from "openai/resources"
 import type { Page } from "playwright"
 import { BROWSER_TOOLS, executeTool } from "./tools"
 import type { AgentAssessment } from "./types"
+
+const MODEL = "anthropic/claude-haiku-4-5-20251001"
 
 export const FALLBACK_ASSESSMENT: AgentAssessment = {
   checks: {
@@ -60,52 +62,54 @@ export function parseAssessment(text: string): AgentAssessment {
 export async function runBrowserAgent(
   url: string,
   page: Page,
-  client: Anthropic,
+  client: OpenAI,
   maxTurns = 15
 ): Promise<AgentAssessment> {
-  const messages: MessageParam[] = [
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: SYSTEM_PROMPT },
     { role: "user", content: `Scan this URL for AI agent operability: ${url}` },
   ]
 
   for (let turn = 0; turn < maxTurns; turn++) {
-    const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+    const response = await client.chat.completions.create({
+      model: MODEL,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
       tools: BROWSER_TOOLS,
       messages,
     })
 
-    if (response.stop_reason === "end_turn") {
-      const textBlock = response.content.find(b => b.type === "text")
-      return parseAssessment(textBlock?.type === "text" ? textBlock.text : "")
+    const choice = response.choices[0]
+
+    if (choice.finish_reason === "stop") {
+      return parseAssessment(choice.message.content ?? "")
     }
 
-    const toolResults: ToolResultBlockParam[] = []
-    for (const block of response.content) {
-      if (block.type === "tool_use") {
-        const result = await executeTool(block.name, block.input as Record<string, unknown>, page)
-        toolResults.push({
-          type: "tool_result",
-          tool_use_id: block.id,
-          content: JSON.stringify(result),
-        })
-      }
+    messages.push(choice.message)
+
+    const toolCalls = choice.message.tool_calls ?? []
+    if (toolCalls.length === 0) break
+
+    const toolResults: ChatCompletionMessageParam[] = []
+    for (const toolCall of toolCalls) {
+      let input: Record<string, unknown> = {}
+      try { input = JSON.parse(toolCall.function.arguments) as Record<string, unknown> } catch { /* use empty */ }
+      const result = await executeTool(toolCall.function.name, input, page)
+      toolResults.push({
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: JSON.stringify(result),
+      })
     }
 
-    messages.push({ role: "assistant", content: response.content })
-    if (toolResults.length === 0) break
-    messages.push({ role: "user", content: toolResults })
+    messages.push(...toolResults)
   }
 
   // Max turns reached — prompt for final JSON
   messages.push({ role: "user", content: "You have reached the maximum number of steps. Emit your final JSON assessment now, with no other text." })
-  const final = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+  const final = await client.chat.completions.create({
+    model: MODEL,
     max_tokens: 1024,
-    system: SYSTEM_PROMPT,
     messages,
   })
-  const textBlock = final.content.find(b => b.type === "text")
-  return parseAssessment(textBlock?.type === "text" ? textBlock.text : "")
+  return parseAssessment(final.choices[0].message.content ?? "")
 }

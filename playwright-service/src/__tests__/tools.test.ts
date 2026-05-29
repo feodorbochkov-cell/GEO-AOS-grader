@@ -27,17 +27,18 @@ describe("BROWSER_TOOLS schemas", () => {
     expect(BROWSER_TOOLS).toHaveLength(6)
   })
 
-  it("each tool has name, description, and input_schema with type=object", () => {
+  it("each tool has type=function with name, description, and parameters with type=object", () => {
     for (const tool of BROWSER_TOOLS) {
-      expect(typeof tool.name).toBe("string")
-      expect(typeof tool.description).toBe("string")
-      expect(tool.input_schema).toBeDefined()
-      expect(tool.input_schema.type).toBe("object")
+      expect(tool.type).toBe("function")
+      expect(typeof tool.function.name).toBe("string")
+      expect(typeof tool.function.description).toBe("string")
+      expect(tool.function.parameters).toBeDefined()
+      expect((tool.function.parameters as { type: string }).type).toBe("object")
     }
   })
 
   it("defines the expected tool names in order", () => {
-    const names = BROWSER_TOOLS.map(t => t.name)
+    const names = BROWSER_TOOLS.map(t => t.function.name)
     expect(names).toEqual([
       "navigate",
       "get_page_content",
@@ -49,15 +50,17 @@ describe("BROWSER_TOOLS schemas", () => {
   })
 
   it("navigate tool requires a url property", () => {
-    const navigate = BROWSER_TOOLS.find(t => t.name === "navigate")!
-    expect(navigate.input_schema.properties).toHaveProperty("url")
-    expect(navigate.input_schema.required).toContain("url")
+    const navigate = BROWSER_TOOLS.find(t => t.function.name === "navigate")!
+    const params = navigate.function.parameters as { properties: Record<string, unknown>; required: string[] }
+    expect(params.properties).toHaveProperty("url")
+    expect(params.required).toContain("url")
   })
 
   it("click_element tool requires selectorOrText", () => {
-    const click = BROWSER_TOOLS.find(t => t.name === "click_element")!
-    expect(click.input_schema.properties).toHaveProperty("selectorOrText")
-    expect(click.input_schema.required).toContain("selectorOrText")
+    const click = BROWSER_TOOLS.find(t => t.function.name === "click_element")!
+    const params = click.function.parameters as { properties: Record<string, unknown>; required: string[] }
+    expect(params.properties).toHaveProperty("selectorOrText")
+    expect(params.required).toContain("selectorOrText")
   })
 })
 

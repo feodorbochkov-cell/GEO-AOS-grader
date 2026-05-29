@@ -1,4 +1,4 @@
-import type { Tool } from "@anthropic-ai/sdk/resources/messages"
+import type { ChatCompletionTool } from "openai/resources"
 import type { Page } from "playwright"
 
 function isSafeNavigateUrl(url: string): boolean {
@@ -21,66 +21,84 @@ function isSafeNavigateUrl(url: string): boolean {
   } catch { return false }
 }
 
-export const BROWSER_TOOLS: Tool[] = [
+export const BROWSER_TOOLS: ChatCompletionTool[] = [
   {
-    name: "navigate",
-    description: "Navigate to a URL. Returns page title, HTTP status code, and final URL after redirects.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        url: { type: "string", description: "The URL to navigate to" },
+    type: "function",
+    function: {
+      name: "navigate",
+      description: "Navigate to a URL. Returns page title, HTTP status code, and final URL after redirects.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "The URL to navigate to" },
+        },
+        required: ["url"],
       },
-      required: ["url"],
     },
   },
   {
-    name: "get_page_content",
-    description: "Get the current page's visible text (up to 3000 chars), h1-h3 headings, and top 50 links.",
-    input_schema: {
-      type: "object" as const,
-      properties: {},
-      required: [],
-    },
-  },
-  {
-    name: "click_element",
-    description: "Click an element by CSS selector or visible text. Returns success and new URL if navigation occurred.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        selectorOrText: { type: "string", description: "CSS selector or visible text of the element to click" },
+    type: "function",
+    function: {
+      name: "get_page_content",
+      description: "Get the current page's visible text (up to 3000 chars), h1-h3 headings, and top 50 links.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
       },
-      required: ["selectorOrText"],
     },
   },
   {
-    name: "fill_field",
-    description: "Type a value into an input field identified by CSS selector.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        selector: { type: "string", description: "CSS selector for the input field" },
-        value: { type: "string", description: "Value to type into the field" },
+    type: "function",
+    function: {
+      name: "click_element",
+      description: "Click an element by CSS selector or visible text. Returns success and new URL if navigation occurred.",
+      parameters: {
+        type: "object",
+        properties: {
+          selectorOrText: { type: "string", description: "CSS selector or visible text of the element to click" },
+        },
+        required: ["selectorOrText"],
       },
-      required: ["selector", "value"],
     },
   },
   {
-    name: "get_forms",
-    description: "Get all forms on the current page with their action URLs and field names/types.",
-    input_schema: {
-      type: "object" as const,
-      properties: {},
-      required: [],
+    type: "function",
+    function: {
+      name: "fill_field",
+      description: "Type a value into an input field identified by CSS selector.",
+      parameters: {
+        type: "object",
+        properties: {
+          selector: { type: "string", description: "CSS selector for the input field" },
+          value: { type: "string", description: "Value to type into the field" },
+        },
+        required: ["selector", "value"],
+      },
     },
   },
   {
-    name: "detect_blocking",
-    description: "Check the current page for bot-blocking: CAPTCHA widgets, Cloudflare challenges, suspicious status codes.",
-    input_schema: {
-      type: "object" as const,
-      properties: {},
-      required: [],
+    type: "function",
+    function: {
+      name: "get_forms",
+      description: "Get all forms on the current page with their action URLs and field names/types.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "detect_blocking",
+      description: "Check the current page for bot-blocking: CAPTCHA widgets, Cloudflare challenges, suspicious status codes.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
     },
   },
 ]
