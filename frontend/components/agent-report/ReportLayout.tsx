@@ -39,13 +39,15 @@ export default function ReportLayout({ result }: Props) {
             title={BLOCK_TITLES[key]}
             score={result.blocks[key].score}
             maxScore={result.blocks[key].maxScore}
-            isPending={key === "browserOperability"}
+            isPending={"status" in result.blocks[key] && (result.blocks[key] as { status: string }).status === "pending"}
           />
         ))}
       </div>
 
       <BlockDetail title="Machine Interface"  block={result.blocks.machineInterface} />
-      <PendingBlock />
+      {result.blocks.browserOperability.status === "pending"
+        ? <PendingBlock />
+        : <BlockDetail title="Browser Operability" block={result.blocks.browserOperability} />}
       <BlockDetail title="Agent Discovery"    block={result.blocks.agentDiscovery} />
       <BlockDetail title="Auth & Security"    block={result.blocks.authSecurity} />
 

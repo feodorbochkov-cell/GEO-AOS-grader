@@ -15,6 +15,11 @@ const CHECK_LABELS: Record<string, string> = {
   oauth:                  "OAuth 2.0 Support",
   apiKeySupport:          "API Key / Token Support",
   corsPolicy:             "CORS Policy",
+  botBlocking:            "Bot Blocking",
+  navigationWorking:      "Navigation Working",
+  formsInteractable:      "Forms Interactable",
+  authFlowReachable:      "Auth Flow Reachable",
+  noJsWall:               "No JS Wall",
 }
 
 interface Props {
