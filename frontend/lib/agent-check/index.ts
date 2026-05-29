@@ -176,7 +176,7 @@ export async function runAgentCheck(
     const { machineInterface, agentDiscovery, authSecurity } = assembleBlocks(scored)
     const browserOperability = browserRes.status === "fulfilled"
       ? browserRes.value as AgentCheckResponse["blocks"]["browserOperability"]
-      : { score: 0, maxScore: 25, status: "pending" as const, checks: {} }
+      : { score: 0, maxScore: 25, status: "complete" as const, checks: {} }
 
     const totalScore = machineInterface.score + agentDiscovery.score + authSecurity.score
     const { grade, gradeColor } = getGrade(totalScore)
