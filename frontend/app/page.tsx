@@ -1,377 +1,171 @@
-import AgentReportForm from "./agent-report/AgentReportForm"
+import AosBgCanvas from "./AosBgCanvas"
+import AosScanForm from "./AosScanForm"
+import styles from "./page.module.css"
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+const shiftItems = [
+  { num: "01", label: "Discovering products" },
+  { num: "02", label: "Comparing services" },
+  { num: "03", label: "Executing workflows" },
+  { num: "04", label: "Making transactions autonomously" },
+]
 
 const scoringBlocks = [
   {
-    name: "Machine Interface",
     pts: 30,
+    title: "Machine Interface",
     desc: "MCP servers, OpenAPI specs, and structured API surfaces that agents can discover and call.",
   },
   {
-    name: "Browser Operability",
     pts: 25,
+    title: "Browser Operability",
     desc: "Whether an AI browser agent can navigate, interact, and complete tasks on your site.",
   },
   {
-    name: "Agent Discovery",
     pts: 25,
+    title: "Agent Discovery",
     desc: "llms.txt, robots.txt agent permissions, and Schema.org markup that orient AI agents.",
   },
   {
-    name: "Auth & Security",
     pts: 20,
+    title: "Auth & Security",
     desc: "OAuth flows, CORS policy, and security posture for programmatic agent access.",
   },
 ]
 
-const detectionSignals = [
-  "MCP servers",
-  "OpenAPI specs",
-  "OAuth support",
-  "CORS policy",
-  "llms.txt",
-  "robots.txt permissions",
-  "Schema.org markup",
-  "SDK documentation",
-]
-
-const agentReadinessItems = [
-  "MCP endpoint reachable",
-  "OpenAPI spec found",
-  "OAuth flow supported",
-]
-
-const navLinks = ["The Shift", "Scoring", "Signals", "FAQ"]
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-cream font-display text-ink antialiased">
+    <>
+      <div className={styles.bgFallback} />
+      <AosBgCanvas />
+      <div className={styles.overlay} />
 
-      {/* ── Nav ── */}
-      <header className="sticky top-0 z-30 border-b border-ink/12 bg-cream/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8 lg:px-10">
-          <div className="flex items-center gap-3">
-            <span className="flex h-6 w-6 items-center justify-center bg-orange text-xs font-bold text-cream">
-              A
-            </span>
-            <span className="text-sm font-bold tracking-tight">AOS Grader</span>
-          </div>
-          <div className="hidden items-center gap-7 md:flex">
-            {navLinks.map((link) => (
-              <span
-                key={link}
-                className="cursor-pointer text-sm text-ink/70 transition-colors hover:text-ink"
-              >
-                {link}
-              </span>
-            ))}
-          </div>
-          <a
-            href="#run"
-            className="bg-ink px-5 py-2.5 text-sm font-medium text-cream transition-colors hover:bg-orange"
-          >
-            Run scan
-          </a>
-        </nav>
-      </header>
+      <div className={styles.page}>
 
-      {/* ── Hero ── */}
-      <section className="border-b border-ink/12">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-20">
-          <div className="space-y-8">
-            <span className="inline-flex border border-ink/15 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-ink/65">
-              Agent operability scan — no signup
-            </span>
-            <h1 className="text-5xl font-bold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-              See how agents feel when interacting with your platform.
-            </h1>
-            <p className="max-w-xl text-lg leading-8 text-ink/70">
-              AOS Grader probes your platform for machine-readable interfaces,
-              agent discovery signals, and authentication flows — then scores
-              how ready it is for AI agents to operate.
-            </p>
-            <div id="run" className="border border-ink/15 bg-cream p-4 sm:p-5">
-              <AgentReportForm />
+        {/* ── Nav ── */}
+        <div className={styles.navWrap}>
+          <nav className={styles.nav}>
+            <a href="/" className={styles.brand}>
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                <circle cx="13" cy="13" r="11.5" stroke="#15110d" strokeWidth="1.4" opacity="0.5" />
+                <circle cx="13" cy="13" r="6.5" stroke="#ff5722" strokeWidth="1.6" />
+                <circle cx="13" cy="13" r="2" fill="#15110d" />
+              </svg>
+              <span className={styles.wordmark}>AOS Grader</span>
+            </a>
+
+            <div className={styles.navLinks}>
+              <a href="#the-shift">The Shift</a>
+              <a href="#scoring">Scoring</a>
+              <a href="#grader">Grader</a>
             </div>
-            <div className="grid max-w-lg grid-cols-3 border border-ink/15">
-              {[
-                ["0–100", "AOS Score"],
-                ["4", "blocks checked"],
-                ["~30s", "to report"],
-              ].map(([value, label], i) => (
-                <div
-                  key={label}
-                  className={`px-4 py-4 ${i > 0 ? "border-l border-ink/15" : ""}`}
-                >
-                  <div className="text-2xl font-bold">{value}</div>
-                  <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/55">
-                    {label}
-                  </div>
+
+            <a href="#scan-input" className={styles.navCta}>Run scan</a>
+          </nav>
+        </div>
+
+        {/* ── Hero ── */}
+        <main className={styles.hero}>
+          <h1 className={styles.heroH1}>
+            See how AI-agents interact with your platform.
+          </h1>
+          <p className={styles.heroP}>
+            AOS Grader probes your platform for machine-readable interfaces, agent
+            discovery signals, and authentication flows — then scores how ready it
+            is for AI agents to operate.
+          </p>
+          <div className={styles.formWrap}>
+            <AosScanForm inputId="scan-input" />
+          </div>
+        </main>
+
+        {/* ── The Shift ── */}
+        <section className={styles.shift} id="the-shift">
+          <div className={styles.shiftInner}>
+            <span className={styles.eyebrow}>The Shift</span>
+            <h2 className={styles.shiftH2}>A new platform shift is happening</h2>
+            <p className={styles.shiftSub}>
+              The internet was built for humans. The next generation of platforms
+              will be built for <strong>AI agents</strong>.
+            </p>
+
+            <p className={styles.layerLabel}>
+              AI agents are rapidly becoming a new layer of the internet:
+            </p>
+
+            <div className={styles.shiftItems}>
+              {shiftItems.map(item => (
+                <div key={item.num} className={styles.shiftItem}>
+                  <span className={styles.shiftNum}>{item.num}</span>
+                  <span className={styles.shiftLabel}>{item.label}</span>
                 </div>
               ))}
             </div>
-          </div>
-          <PixelHero />
-        </div>
-      </section>
 
-      {/* ── The Shift ── */}
-      <section className="border-b border-ink/12">
-        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
-          <div className="mb-12 max-w-2xl space-y-4">
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
-              Why operability
-            </span>
-            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              Being found isn&apos;t enough. Agents need to act.
-            </h2>
-          </div>
-          <div className="grid border border-ink/12 md:grid-cols-2">
-            <div className="space-y-4 p-8">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/45">
-                AEO / SEO
-              </span>
-              <h3 className="text-2xl font-bold">Can AI find you?</h3>
-              <p className="leading-7 text-ink/65">
-                Search optimization ensures your brand appears in AI-generated
-                answers and citations. Necessary, but no longer sufficient.
-              </p>
-            </div>
-            <div className="space-y-4 border-t border-ink/12 bg-orange/5 p-8 md:border-l md:border-t-0">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
-                AOS
-              </span>
-              <h3 className="text-2xl font-bold">Can AI use you?</h3>
-              <p className="leading-7 text-ink/65">
-                Agent operability determines whether an AI agent can
-                authenticate, discover your APIs, and complete tasks — not just
-                reference your name.
+            <div className={styles.shiftClosing}>
+              <p className={styles.shiftClosingP}>
+                Platforms optimized for AI agents will{" "}
+                <span className={styles.hl}>capture the next wave of digital growth</span>.
               </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── 4 Scoring Blocks ── */}
-      <section className="border-b border-ink/12">
-        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
-          <div className="mb-12 max-w-2xl space-y-4">
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
-              Scoring
-            </span>
-            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              Four dimensions of agent readiness
-            </h2>
-          </div>
-          <div className="grid border border-ink/12 md:grid-cols-2">
-            {scoringBlocks.map((block, i) => (
-              <article
-                key={block.name}
-                className={`p-7 ${i % 2 !== 0 ? "md:border-l md:border-ink/12" : ""} ${i >= 2 ? "border-t border-ink/12" : ""}`}
-              >
-                <div className="mb-6 flex items-start justify-between">
-                  <PixelGlyph index={i} />
-                  <span className="border border-orange/30 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
-                    {block.pts} pts
-                  </span>
-                </div>
-                <h3 className="mb-3 text-xl font-bold">{block.name}</h3>
-                <p className="leading-7 text-ink/65">{block.desc}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── What we detect — dark navy band ── */}
-      <section className="border-b border-ink/12 bg-navy text-cream">
-        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
-          <div className="mx-auto mb-12 max-w-3xl space-y-5 text-center">
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange-bright">
-              What we detect
-            </span>
-            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              Concrete signals, not guesswork
-            </h2>
-            <p className="mx-auto max-w-xl text-lg leading-8 text-cream/70">
-              Every check targets a real signal an agent would encounter —
-              machine-readable interfaces, discovery files, and authentication
-              endpoints.
-            </p>
-          </div>
-          <div className="grid border border-cream/15 sm:grid-cols-2 lg:grid-cols-4">
-            {detectionSignals.map((signal, i) => (
-              <div
-                key={signal}
-                className={[
-                  "flex items-center gap-3 p-6 text-base font-medium",
-                  i > 0 ? "border-t border-cream/15" : "",
-                  i % 2 !== 0 ? "sm:border-l sm:border-cream/15 sm:border-t-0" : "",
-                  i % 2 === 0 && i >= 2 ? "sm:border-t sm:border-cream/15" : "",
-                  i % 4 !== 0 ? "lg:border-l lg:border-cream/15 lg:border-t-0" : "",
-                  i > 0 && i < 4 ? "lg:border-t-0" : "",
-                  i % 4 === 0 && i >= 4 ? "lg:border-t lg:border-cream/15" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <span className="h-2 w-2 shrink-0 bg-orange" />
-                {signal}
+        {/* ── Scoring ── */}
+        <section className={styles.scoring} id="scoring">
+          <div className={styles.scoringInner}>
+            <div className={styles.scoringHead}>
+              <div>
+                <span className={styles.eyebrow}>Scoring</span>
+                <h2 className={styles.scoringH2}>Four dimensions of agent readiness</h2>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Who it's for + readiness card ── */}
-      <section className="border-b border-ink/12">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-10 lg:py-24">
-          <div className="space-y-5">
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
-              Who it&apos;s for
-            </span>
-            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              For platforms that want to be agent-ready
-            </h2>
-            <p className="max-w-2xl text-lg leading-8 text-ink/65">
-              API-first SaaS, developer tools, and marketplaces that expect AI
-              agents to become a primary user class. Use AOS as an instant
-              diagnostic before you invest in agent integrations.
-            </p>
-          </div>
-          <div className="border border-ink/15 bg-cream">
-            <div className="flex items-center justify-between border-b border-ink/12 px-6 py-4">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/55">
-                Sample verdict
-              </span>
-              <span className="bg-orange px-3 py-1 text-sm font-semibold text-cream">
-                Agent Ready
-              </span>
+              <div className={styles.scoringTotal}>
+                Weighted to <span className={styles.scoringTotalPts}>100 pts</span> total
+              </div>
             </div>
-            <div className="space-y-5 p-6">
-              {agentReadinessItems.map((item) => (
-                <div key={item} className="flex items-center gap-4">
-                  <span className="h-3 w-3 bg-orange" />
-                  <span className="text-lg">{item}</span>
+
+            <div className={styles.scoreGrid}>
+              {scoringBlocks.map(block => (
+                <div key={block.title} className={styles.scoreCard}>
+                  <div className={styles.scorePts}>
+                    {block.pts}
+                    <span className={styles.scorePtsUnit}>pts</span>
+                  </div>
+                  <div className={styles.scoreTitle}>{block.title}</div>
+                  <p className={styles.scoreDesc}>{block.desc}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Final CTA ── */}
-      <section className="px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
-        <div className="mx-auto max-w-7xl border border-ink/15 bg-cream p-7 sm:p-12">
-          <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-            <div className="space-y-4">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-orange">
-                Run a scan
-              </span>
-              <h2 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
-                Find out if your platform is ready for the agent era
-              </h2>
+        {/* ── Final CTA ── */}
+        <section className={styles.cta}>
+          <div className={styles.ctaInner}>
+            <span className={styles.eyebrow}>Run a scan</span>
+            <h2 className={styles.ctaH2}>
+              Find out if your platform is ready for the agent era
+            </h2>
+            <div className={styles.formWrap}>
+              <AosScanForm inputId="scan-input-2" />
             </div>
-            <AgentReportForm />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-ink/12">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-5 py-8 sm:flex-row sm:items-center sm:px-8 lg:px-10">
-          <span className="text-sm font-bold tracking-tight">AOS Grader</span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/45">
-            Agent operability scan
-          </span>
-        </div>
-      </footer>
-    </main>
-  )
-}
-
-// ─── PixelHero ────────────────────────────────────────────────────────────────
-
-const PIXEL_PALETTE: Record<string, string> = {
-  b: "bg-orange-bright",
-  o: "bg-orange",
-  r: "bg-orange-red",
-  d: "bg-orange-deep",
-  ".": "bg-transparent",
-}
-
-const PIXEL_PATTERN = [
-  ".", "o", "b", "o", "r", "o", "d", "o", ".",
-  "o", "r", "o", "d", "b", "o", "r", "o", "b",
-  "b", "o", "r", "o", "o", "d", "o", "b", "o",
-  "o", "d", "o", "b", "o", "r", "o", "o", "r",
-  "r", "o", "b", "o", "d", "o", "b", "o", "o",
-  "o", "b", "o", "r", "o", "o", "d", "o", "b",
-  ".", "o", "d", "o", "b", "o", "r", "o", ".",
-]
-
-const probeRows = [
-  { label: "MCP endpoint", status: "Found", ok: true },
-  { label: "OpenAPI spec", status: "Found", ok: true },
-  { label: "OAuth support", status: "Missing", ok: false },
-]
-
-function PixelHero() {
-  return (
-    <div className="relative aspect-square w-full overflow-hidden border border-ink/12 bg-orange">
-      <div className="grid h-full w-full grid-cols-9">
-        {PIXEL_PATTERN.map((key, i) => (
-          <div key={i} className={PIXEL_PALETTE[key] ?? "bg-orange"} />
-        ))}
-      </div>
-      <div className="pixel-grid-lines pointer-events-none absolute inset-0" />
-      <span className="animate-diamond absolute right-[14%] top-[16%] h-9 w-9 bg-orange-deep" />
-      <span className="absolute bottom-[20%] left-[16%] h-7 w-7 rotate-45 bg-orange-red" />
-      <span className="absolute bottom-3 left-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70">
-        AOS Grader
-      </span>
-      <span className="absolute right-3 top-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70">
-        Operability
-      </span>
-      <div className="absolute left-1/2 top-1/2 w-[80%] max-w-sm -translate-x-1/2 -translate-y-1/2 border border-ink/15 bg-cream p-4 shadow-[0_24px_60px_rgba(13,13,13,0.25)]">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink/45">
-          Capability probe
-        </p>
-        <p className="mt-2 leading-7 text-ink">stripe.com</p>
-        <div className="mt-4 space-y-3">
-          {probeRows.map((row) => (
-            <div key={row.label} className="flex items-center justify-between text-xs">
-              <span className="text-ink/70">{row.label}</span>
-              <span className={row.ok ? "font-medium text-orange" : "text-ink/40"}>
-                {row.status}
-              </span>
+        {/* ── Footer ── */}
+        <footer className={styles.footer}>
+          <div className={styles.footerInner}>
+            <div className={styles.footerBrand}>
+              <svg width="24" height="24" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                <circle cx="13" cy="13" r="11.5" stroke="#15110d" strokeWidth="1.4" opacity="0.45" />
+                <circle cx="13" cy="13" r="6.5" stroke="#15110d" strokeWidth="1.5" opacity="0.7" />
+                <circle cx="13" cy="13" r="2" fill="#15110d" />
+              </svg>
+              <span className={styles.footerWordmark}>AOS Grader</span>
             </div>
-          ))}
-        </div>
+            <div className={styles.footerTag}>Agent operability scan</div>
+          </div>
+        </footer>
       </div>
-    </div>
-  )
-}
-
-// ─── PixelGlyph ───────────────────────────────────────────────────────────────
-
-function PixelGlyph({ index }: { index: number }) {
-  const shades = ["bg-orange", "bg-orange-red", "bg-orange-deep", "bg-orange-bright"]
-  const cells = [
-    [1, 1, 0, 1],
-    [0, 1, 1, 0],
-    [1, 0, 1, 1],
-    [1, 1, 1, 0],
-  ][index % 4]
-  const shade = shades[index % 4]
-  return (
-    <div className="grid grid-cols-2 gap-0.5">
-      {cells.map((on, i) => (
-        <span key={i} className={`h-2 w-2 ${on ? shade : "bg-ink/10"}`} />
-      ))}
-    </div>
+    </>
   )
 }
