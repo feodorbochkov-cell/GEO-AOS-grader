@@ -210,9 +210,10 @@ export default function HomePage() {
                   "flex items-center gap-3 p-6 text-base font-medium",
                   i > 0 ? "border-t border-cream/15" : "",
                   i % 2 !== 0 ? "sm:border-l sm:border-cream/15 sm:border-t-0" : "",
-                  i % 2 === 0 && i >= 2 ? "sm:border-t border-cream/15" : "",
+                  i % 2 === 0 && i >= 2 ? "sm:border-t sm:border-cream/15" : "",
                   i % 4 !== 0 ? "lg:border-l lg:border-cream/15 lg:border-t-0" : "",
-                  i % 4 === 0 && i >= 4 ? "lg:border-t border-cream/15" : "",
+                  i > 0 && i < 4 ? "lg:border-t-0" : "",
+                  i % 4 === 0 && i >= 4 ? "lg:border-t lg:border-cream/15" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
