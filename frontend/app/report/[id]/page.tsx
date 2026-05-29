@@ -34,7 +34,7 @@ export default function ReportPage({ params }: Props) {
           timer = setTimeout(poll, 3000);
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Ошибка загрузки");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load");
       }
     }
 
@@ -48,7 +48,7 @@ export default function ReportPage({ params }: Props) {
   if (error) {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <h1 className="mb-3 text-2xl font-semibold">Ошибка</h1>
+        <h1 className="mb-3 text-2xl font-semibold">Error</h1>
         <p className="text-red-600">{error}</p>
       </main>
     );
@@ -57,7 +57,7 @@ export default function ReportPage({ params }: Props) {
   if (!report) {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <p className="text-neutral-500">Загружаем…</p>
+        <p className="text-neutral-500">Loading…</p>
       </main>
     );
   }
@@ -65,8 +65,8 @@ export default function ReportPage({ params }: Props) {
   if (report.status === "failed") {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <h1 className="mb-3 text-2xl font-semibold">Не получилось</h1>
-        <p className="text-red-600">{report.error ?? "Неизвестная ошибка"}</p>
+        <h1 className="mb-3 text-2xl font-semibold">Something went wrong</h1>
+        <p className="text-red-600">{report.error ?? "Unknown error"}</p>
       </main>
     );
   }
@@ -79,7 +79,7 @@ export default function ReportPage({ params }: Props) {
     <main className="mx-auto max-w-5xl space-y-10 p-6 sm:p-10">
       <header className="space-y-1">
         <p className="text-sm text-neutral-500">
-          {report.brand_name ?? "Бренд"} · {report.brand_domain ?? report.url}
+          {report.brand_name ?? "Brand"} · {report.brand_domain ?? report.url}
         </p>
         {report.industry && <p className="text-xs text-neutral-400">{report.industry}</p>}
       </header>
@@ -93,7 +93,7 @@ export default function ReportPage({ params }: Props) {
       <ReportCTA />
 
       <footer className="border-t border-neutral-200 pt-6 text-xs text-neutral-400">
-        AEO Grader · отчёт от {new Date(report.updated_at).toLocaleString("ru-RU")}
+        AEO Grader · report from {new Date(report.updated_at).toLocaleString("en-US")}
       </footer>
     </main>
   );
@@ -103,18 +103,18 @@ function Generating({ brandUrl }: { brandUrl: string }) {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <div className="space-y-5">
-        <h1 className="text-3xl font-semibold tracking-tight">Прогоняем 10 запросов через Perplexity…</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Running 10 queries through Perplexity…</h1>
         <p className="text-neutral-600">
-          Анализируем видимость {brandUrl} в AI-поисковой выдаче. Обычно занимает 60–90 секунд.
+          Analyzing visibility of {brandUrl} in AI search. Usually takes 60–90 seconds.
         </p>
         <div className="h-1 w-full overflow-hidden rounded bg-neutral-200">
           <div className="h-full w-1/2 animate-pulse rounded bg-neutral-900" />
         </div>
         <ul className="space-y-2 text-sm text-neutral-500">
-          <li>· Параллельный прогон 10 запросов</li>
-          <li>· Извлечение citations и упоминаний в тексте</li>
-          <li>· Классификация sentiment по упоминаниям бренда</li>
-          <li>· Агрегация Source Share of Voice</li>
+          <li>· Parallel run of 10 queries</li>
+          <li>· Extracting citations and in-text mentions</li>
+          <li>· Sentiment classification for brand mentions</li>
+          <li>· Aggregating Source Share of Voice</li>
         </ul>
       </div>
     </main>

@@ -8,11 +8,11 @@ export interface ScoreLevel {
 }
 
 const LEVELS: ScoreLevel[] = [
-  { label: "Невидимы для AI",    rangeStart: 0,  rangeEnd: 19,  textClass: "text-red-700",     bgClass: "bg-red-50",     barClass: "bg-red-500" },
-  { label: "Слабая видимость",   rangeStart: 20, rangeEnd: 39,  textClass: "text-orange-700",  bgClass: "bg-orange-50",  barClass: "bg-orange-500" },
-  { label: "Средняя видимость",  rangeStart: 40, rangeEnd: 59,  textClass: "text-yellow-700",  bgClass: "bg-yellow-50",  barClass: "bg-yellow-500" },
-  { label: "Сильная видимость",  rangeStart: 60, rangeEnd: 79,  textClass: "text-green-700",   bgClass: "bg-green-50",   barClass: "bg-green-500" },
-  { label: "Лидер ниши",         rangeStart: 80, rangeEnd: 100, textClass: "text-emerald-800", bgClass: "bg-emerald-50", barClass: "bg-emerald-600" },
+  { label: "Invisible to AI",    rangeStart: 0,  rangeEnd: 19,  textClass: "text-red-700",     bgClass: "bg-red-50",     barClass: "bg-red-500" },
+  { label: "Weak Visibility",    rangeStart: 20, rangeEnd: 39,  textClass: "text-orange-700",  bgClass: "bg-orange-50",  barClass: "bg-orange-500" },
+  { label: "Moderate Visibility",rangeStart: 40, rangeEnd: 59,  textClass: "text-yellow-700",  bgClass: "bg-yellow-50",  barClass: "bg-yellow-500" },
+  { label: "Strong Visibility",  rangeStart: 60, rangeEnd: 79,  textClass: "text-green-700",   bgClass: "bg-green-50",   barClass: "bg-green-500" },
+  { label: "Niche Leader",       rangeStart: 80, rangeEnd: 100, textClass: "text-emerald-800", bgClass: "bg-emerald-50", barClass: "bg-emerald-600" },
 ];
 
 export function getLevel(score: number): ScoreLevel {
@@ -41,8 +41,8 @@ export function formatPercent(value: number | null | undefined, digits = 0): str
 }
 
 export const SENTIMENT_LABEL: Record<string, string> = {
-  positive: "Позитивная",
-  neutral: "Нейтральная",
-  mixed: "Смешанная",
-  negative: "Негативная",
+  positive: "Positive",
+  neutral: "Neutral",
+  mixed: "Mixed",
+  negative: "Negative",
 };

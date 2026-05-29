@@ -106,7 +106,8 @@ export async function scoreSonnet(
   try {
     const evidenceJson = buildEvidenceJson(domain, machine, discovery, auth, phase2)
     const prompt = buildPrompt(evidenceJson)
-    const content = await callOpenRouter(SONNET, prompt, 2000)
+    const raw = await callOpenRouter(SONNET, prompt, 2000)
+    const content = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim()
     const parsed = JSON.parse(content) as SonnetScoringResult
     if (!parsed?.checks || typeof parsed.checks !== "object") return ZERO_CHECKS
     return parsed

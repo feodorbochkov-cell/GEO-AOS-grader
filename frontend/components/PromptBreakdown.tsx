@@ -53,16 +53,16 @@ export default function PromptBreakdown({ report }: Props) {
 
   return (
     <section>
-      <h2 className="mb-3 text-xl font-semibold">Разбивка по запросам</h2>
+      <h2 className="mb-3 text-xl font-semibold">Breakdown by query</h2>
       <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
         <table className="w-full text-left text-sm">
           <thead className="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
             <tr>
-              <th className="px-4 py-3">Запрос</th>
-              <th className="px-3 py-3 text-center">Цит.</th>
-              <th className="px-3 py-3 text-center">Упом.</th>
+              <th className="px-4 py-3">Query</th>
+              <th className="px-3 py-3 text-center">Cited</th>
+              <th className="px-3 py-3 text-center">Mentioned</th>
               <th className="px-3 py-3">Sentiment</th>
-              <th className="px-3 py-3">Конкуренты</th>
+              <th className="px-3 py-3">Competitors</th>
             </tr>
           </thead>
           <tbody>
@@ -120,12 +120,12 @@ function ExpandableRow({ pr, expanded, onToggle, brandAliases, competitorNames }
         <tr className="border-t border-neutral-100 bg-neutral-50">
           <td colSpan={5} className="px-4 py-5">
             {pr.error ? (
-              <p className="text-sm text-red-600">Ошибка: {pr.error}</p>
+              <p className="text-sm text-red-600">Error: {pr.error}</p>
             ) : (
               <div className="space-y-4">
                 <div>
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                    Ответ Perplexity
+                    Perplexity response
                   </p>
                   <div className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg bg-white p-4 text-sm leading-relaxed text-neutral-800 ring-1 ring-neutral-200">
                     {highlight(pr.raw_response, brandAliases, competitorNames)}
@@ -134,7 +134,7 @@ function ExpandableRow({ pr, expanded, onToggle, brandAliases, competitorNames }
                 {pr.citations.length > 0 && (
                   <div>
                     <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                      Источники ({pr.citations.length})
+                      Sources ({pr.citations.length})
                     </p>
                     <ul className="flex flex-wrap gap-2">
                       {pr.citations.map((c, idx) => (

@@ -24,7 +24,7 @@ export default function SourceShareOfVoice({ report }: Props) {
     return (
       <section>
         <h2 className="mb-3 text-xl font-semibold">Source Share of Voice</h2>
-        <p className="text-sm text-neutral-500">Источников не нашлось.</p>
+        <p className="text-sm text-neutral-500">No sources found.</p>
       </section>
     );
   }
@@ -57,7 +57,7 @@ export default function SourceShareOfVoice({ report }: Props) {
               <Tooltip
                 cursor={{ fill: "rgba(0,0,0,0.04)" }}
                 contentStyle={{ borderRadius: 8, border: "1px solid #e5e5e5", fontSize: 12 }}
-                formatter={(value: number) => [`${value} цитат`, "В источниках"]}
+                formatter={(value: number) => [`${value} citations`, "In sources"]}
                 labelFormatter={(label) => label}
               />
               <Bar dataKey="count" radius={[0, 4, 4, 0]}>
@@ -72,7 +72,7 @@ export default function SourceShareOfVoice({ report }: Props) {
 
       {otherDomains.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-sm font-medium text-neutral-700">Топ-5 «чужих» доменов в нише</p>
+          <p className="mb-2 text-sm font-medium text-neutral-700">Top 5 third-party domains in your niche</p>
           <ul className="flex flex-wrap gap-2">
             {otherDomains.map((d) => (
               <li key={d.domain}>
@@ -97,9 +97,9 @@ export default function SourceShareOfVoice({ report }: Props) {
 function Legend() {
   return (
     <div className="flex items-center gap-3 text-xs text-neutral-600">
-      <LegendDot color={BRAND_COLOR} label="Бренд" />
-      <LegendDot color={COMPETITOR_COLOR} label="Конкурент" />
-      <LegendDot color={OTHER_COLOR} label="Прочие" />
+      <LegendDot color={BRAND_COLOR} label="Brand" />
+      <LegendDot color={COMPETITOR_COLOR} label="Competitor" />
+      <LegendDot color={OTHER_COLOR} label="Other" />
     </div>
   );
 }

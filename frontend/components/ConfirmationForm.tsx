@@ -67,10 +67,10 @@ export default function ConfirmationForm({ data }: Props) {
       const promptsClean = prompts.map((p) => p.trim()).filter(Boolean);
 
       if (!brandName.trim() || !brandDomain.trim()) {
-        throw new Error("Укажи название бренда и домен");
+        throw new Error("Please enter a brand name and domain");
       }
       if (promptsClean.length === 0) {
-        throw new Error("Нужен хотя бы один поисковый запрос");
+        throw new Error("At least one search query is required");
       }
 
       await patchAnalysis(data.id, {
@@ -84,7 +84,7 @@ export default function ConfirmationForm({ data }: Props) {
 
       router.push(`/report/${data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось сохранить");
+      setError(err instanceof Error ? err.message : "Failed to save");
       setSubmitting(false);
     }
   }
@@ -92,9 +92,9 @@ export default function ConfirmationForm({ data }: Props) {
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Бренд</h2>
+        <h2 className="text-lg font-semibold">Brand</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Название">
+          <Field label="Name">
             <input
               className="input"
               value={brandName}
@@ -102,35 +102,35 @@ export default function ConfirmationForm({ data }: Props) {
               required
             />
           </Field>
-          <Field label="Домен">
+          <Field label="Domain">
             <input
               className="input"
               value={brandDomain}
               onChange={(e) => setBrandDomain(e.target.value)}
-              placeholder="tinkoff.ru"
+              placeholder="example.com"
               required
             />
           </Field>
         </div>
-        <Field label="Альтернативные написания (через запятую)">
+        <Field label="Alternative spellings (comma-separated)">
           <input
             className="input"
             value={aliasesText}
             onChange={(e) => setAliasesText(e.target.value)}
-            placeholder="Тинькофф, Tinkoff, Т-Банк"
+            placeholder="Acme, ACME Inc, Acme Corp"
           />
         </Field>
       </section>
 
       <section className="space-y-4">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold">Конкуренты</h2>
+          <h2 className="text-lg font-semibold">Competitors</h2>
           <button
             type="button"
             onClick={addCompetitor}
             className="text-sm text-neutral-600 hover:text-neutral-900"
           >
-            + добавить
+            + add
           </button>
         </div>
         <div className="space-y-2">
@@ -140,19 +140,19 @@ export default function ConfirmationForm({ data }: Props) {
                 className="input flex-1"
                 value={c.name}
                 onChange={(e) => updateCompetitor(idx, "name", e.target.value)}
-                placeholder="Название"
+                placeholder="Name"
               />
               <input
                 className="input flex-1"
                 value={c.domain}
                 onChange={(e) => updateCompetitor(idx, "domain", e.target.value)}
-                placeholder="domain.ru"
+                placeholder="domain.com"
               />
               <button
                 type="button"
                 onClick={() => removeCompetitor(idx)}
                 className="rounded px-3 text-neutral-400 hover:text-red-600"
-                aria-label="Удалить"
+                aria-label="Remove"
               >
                 ×
               </button>
@@ -160,7 +160,7 @@ export default function ConfirmationForm({ data }: Props) {
           ))}
           {competitors.length === 0 && (
             <p className="text-sm text-neutral-500">
-              Конкуренты не указаны. Нажми «добавить», чтобы вписать вручную.
+              No competitors added. Click &lsquo;add&rsquo; to enter them manually.
             </p>
           )}
         </div>
@@ -168,13 +168,13 @@ export default function ConfirmationForm({ data }: Props) {
 
       <section className="space-y-4">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold">Поисковые запросы</h2>
+          <h2 className="text-lg font-semibold">Search queries</h2>
           <button
             type="button"
             onClick={addPrompt}
             className="text-sm text-neutral-600 hover:text-neutral-900"
           >
-            + добавить
+            + add
           </button>
         </div>
         <div className="space-y-2">
@@ -192,7 +192,7 @@ export default function ConfirmationForm({ data }: Props) {
                 type="button"
                 onClick={() => removePrompt(idx)}
                 className="rounded px-3 text-neutral-400 hover:text-red-600"
-                aria-label="Удалить"
+                aria-label="Remove"
               >
                 ×
               </button>
@@ -202,8 +202,8 @@ export default function ConfirmationForm({ data }: Props) {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Email (необязательно)</h2>
-        <Field label="Куда прислать ссылку на отчёт">
+        <h2 className="text-lg font-semibold">Email (optional)</h2>
+        <Field label="Where to send the report link">
           <input
             type="email"
             className="input"
@@ -222,7 +222,7 @@ export default function ConfirmationForm({ data }: Props) {
           disabled={submitting}
           className="w-full rounded-lg bg-neutral-900 px-6 py-3 text-base font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
-          {submitting ? "Запускаю прогон…" : "Сгенерировать отчёт"}
+          {submitting ? "Running…" : "Generate report"}
         </button>
       </div>
     </form>

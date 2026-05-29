@@ -6,7 +6,7 @@ interface Props {
 }
 
 function buildSummary(r: ReportOut): string {
-  const brand = r.brand_name ?? "Бренд";
+  const brand = r.brand_name ?? "Brand";
   const total = r.prompt_results.length;
   const cited = r.prompt_results.filter((p) => p.brand_cited).length;
   const mentioned = r.prompt_results.filter((p) => p.brand_mentioned).length;
@@ -30,12 +30,12 @@ function buildSummary(r: ReportOut): string {
 
   let compPart = "";
   if (topCompetitors.length === 2) {
-    compPart = ` Конкуренты ${topCompetitors[0].name} и ${topCompetitors[1].name} цитируются в ${topCompetitors[0].count} и ${topCompetitors[1].count}.`;
+    compPart = ` Competitors ${topCompetitors[0].name} and ${topCompetitors[1].name} are cited in ${topCompetitors[0].count} and ${topCompetitors[1].count} queries respectively.`;
   } else if (topCompetitors.length === 1) {
-    compPart = ` Конкурент ${topCompetitors[0].name} цитируется в ${topCompetitors[0].count}.`;
+    compPart = ` Competitor ${topCompetitors[0].name} is cited in ${topCompetitors[0].count} queries.`;
   }
 
-  return `${brand} виден в Perplexity: упоминается в ${mentioned} из ${total} запросов, цитируется как источник в ${cited} из ${total}.${compPart}`;
+  return `${brand} is visible in Perplexity: mentioned in ${mentioned} of ${total} queries, cited as a source in ${cited} of ${total}.${compPart}`;
 }
 
 export default function ScoreHero({ report }: Props) {
@@ -62,7 +62,7 @@ export default function ScoreHero({ report }: Props) {
           </span>
           {delta && (
             <p className="mt-3 text-sm text-neutral-600">
-              До «{delta.label}» — <span className="font-medium">{delta.points} {pluralPoints(delta.points)}</span>
+              To &ldquo;{delta.label}&rdquo; — <span className="font-medium">{delta.points} {delta.points === 1 ? "point" : "points"}</span>
             </p>
           )}
         </div>
@@ -70,12 +70,4 @@ export default function ScoreHero({ report }: Props) {
       <p className="mt-8 max-w-3xl text-base leading-relaxed text-neutral-700">{summary}</p>
     </section>
   );
-}
-
-function pluralPoints(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "пункт";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "пункта";
-  return "пунктов";
 }

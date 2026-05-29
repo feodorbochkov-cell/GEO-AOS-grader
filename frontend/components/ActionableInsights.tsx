@@ -17,11 +17,11 @@ export default function ActionableInsights({ report }: Props) {
 
   return (
     <section className="space-y-8">
-      <h2 className="text-xl font-semibold">Что делать</h2>
+      <h2 className="text-xl font-semibold">What to do</h2>
 
-      <SubSection title="Приоритетные запросы для проработки" hint="Запросы, где конкуренты есть, а вас — нет">
+      <SubSection title="Priority queries to address" hint="Queries where competitors appear but you don't">
         {priorityPrompts.length === 0 ? (
-          <p className="text-sm text-neutral-500">Запросов с явным проигрышем конкурентам не нашлось.</p>
+          <p className="text-sm text-neutral-500">No queries with clear losses to competitors found.</p>
         ) : (
           <ul className="space-y-3">
             {priorityPrompts.map((p) => (
@@ -29,12 +29,12 @@ export default function ActionableInsights({ report }: Props) {
                 <p className="font-medium text-neutral-900">{p.prompt}</p>
                 {p.competitors_cited.length > 0 && (
                   <p className="mt-1 text-sm text-neutral-600">
-                    Конкуренты в источниках: {p.competitors_cited.join(", ")}
+                    Competitors in sources: {p.competitors_cited.join(", ")}
                   </p>
                 )}
                 {p.competitors_mentioned.length > 0 && (
                   <p className="mt-1 text-sm text-neutral-600">
-                    Упомянуты в тексте: {p.competitors_mentioned.join(", ")}
+                    Mentioned in text: {p.competitors_mentioned.join(", ")}
                   </p>
                 )}
               </li>
@@ -43,9 +43,9 @@ export default function ActionableInsights({ report }: Props) {
         )}
       </SubSection>
 
-      <SubSection title="Топ-источники для размещения" hint="Чужие домены, которые цитируются Perplexity в вашей нише">
+      <SubSection title="Top sources for placement" hint="Third-party domains that Perplexity cites in your niche">
         {otherSources.length === 0 ? (
-          <p className="text-sm text-neutral-500">Сторонних источников не нашлось.</p>
+          <p className="text-sm text-neutral-500">No third-party sources found.</p>
         ) : (
           <ul className="flex flex-wrap gap-2">
             {otherSources.map((d) => (
@@ -57,7 +57,7 @@ export default function ActionableInsights({ report }: Props) {
                   className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700 hover:border-neutral-400"
                 >
                   <span className="font-medium">{d.domain}</span>
-                  <span className="text-xs text-neutral-400">{d.count} цитат</span>
+                  <span className="text-xs text-neutral-400">{d.count} citations</span>
                 </a>
               </li>
             ))}
@@ -66,7 +66,7 @@ export default function ActionableInsights({ report }: Props) {
       </SubSection>
 
       {negativeFlags.length > 0 && (
-        <SubSection title="Sentiment-флаги" hint="Запросы, где AI отозвался о бренде негативно">
+        <SubSection title="Sentiment flags" hint="Queries where AI responded negatively about the brand">
           <ul className="space-y-3">
             {negativeFlags.map((p) => (
               <li key={p.id} className="rounded-lg border border-red-200 bg-red-50 p-4">

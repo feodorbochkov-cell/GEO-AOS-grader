@@ -8,8 +8,8 @@ interface Props {
 function authorityRank(report: ReportOut): string {
   const sov = report.source_share_of_voice ?? [];
   const idx = sov.findIndex((e) => e.is_brand);
-  if (idx < 0) return "Вне топ-15";
-  return `#${idx + 1} из ${sov.length}`;
+  if (idx < 0) return "Outside top 15";
+  return `#${idx + 1} of ${sov.length}`;
 }
 
 export default function MetricCards({ report }: Props) {
@@ -17,22 +17,22 @@ export default function MetricCards({ report }: Props) {
     {
       label: "Citation Rate",
       value: formatPercent(report.citation_rate),
-      hint: "Доля запросов, где бренд цитируется в источниках",
+      hint: "Share of queries where the brand is cited as a source",
     },
     {
       label: "Mention Rate",
       value: formatPercent(report.mention_rate),
-      hint: "Доля запросов, где бренд назван в тексте ответа",
+      hint: "Share of queries where the brand is named in the answer text",
     },
     {
       label: "Sentiment",
       value: report.sentiment_summary ? SENTIMENT_LABEL[report.sentiment_summary] ?? "—" : "—",
-      hint: "Агрегированная тональность упоминаний",
+      hint: "Aggregated sentiment tone of brand mentions",
     },
     {
       label: "Authority Rank",
       value: authorityRank(report),
-      hint: "Место бренда в Source Share of Voice",
+      hint: "Brand position in Source Share of Voice",
     },
   ];
 

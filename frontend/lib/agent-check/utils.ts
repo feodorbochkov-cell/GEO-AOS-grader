@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis"
 import type { AgentCheckResponse } from "./types"
+export { normalizeUrl } from "./url-utils"
 
 export async function fetchWithTimeout(
   url: string,
@@ -13,18 +14,6 @@ export async function fetchWithTimeout(
   } finally {
     clearTimeout(id)
   }
-}
-
-export function normalizeUrl(input: string): { url: string; domain: string } {
-  const withScheme = /^https?:\/\//i.test(input.trim()) ? input.trim() : `https://${input.trim()}`
-  const parsed = new URL(withScheme)
-  let domain = parsed.hostname.replace(/^www\./, "")
-  // Extract base domain (everything after the first subdomain if there are multiple parts)
-  const parts = domain.split(".")
-  if (parts.length > 2) {
-    domain = parts.slice(-2).join(".")
-  }
-  return { url: `${parsed.protocol}//${parsed.host}`, domain }
 }
 
 const rateLimitMap = new Map<string, number[]>()

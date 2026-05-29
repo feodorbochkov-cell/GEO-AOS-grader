@@ -10,7 +10,7 @@ interface Props {
 
 export default function Methodology({ report }: Props) {
   const [open, setOpen] = useState(false);
-  const date = new Date(report.updated_at).toLocaleDateString("ru-RU", {
+  const date = new Date(report.updated_at).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -23,21 +23,21 @@ export default function Methodology({ report }: Props) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
-        <span className="text-base font-medium text-neutral-900">Методология</span>
+        <span className="text-base font-medium text-neutral-900">Methodology</span>
         <span className={`text-neutral-400 transition ${open ? "rotate-90" : ""}`}>▸</span>
       </button>
       {open && (
         <div className="space-y-5 border-t border-neutral-100 px-5 py-5 text-sm leading-relaxed text-neutral-700">
           <div>
-            <p className="mb-2 font-medium text-neutral-900">Инструмент и дата</p>
+            <p className="mb-2 font-medium text-neutral-900">Tool and date</p>
             <p>
-              Модель: <code className="rounded bg-neutral-100 px-1.5 py-0.5">perplexity/sonar-pro</code> через
-              OpenRouter. Дата прогона: {date}.
+              Model: <code className="rounded bg-neutral-100 px-1.5 py-0.5">perplexity/sonar-pro</code> via
+              OpenRouter. Run date: {date}.
             </p>
           </div>
 
           <div>
-            <p className="mb-2 font-medium text-neutral-900">Запросы ({report.prompt_results.length})</p>
+            <p className="mb-2 font-medium text-neutral-900">Queries ({report.prompt_results.length})</p>
             <ol className="list-decimal space-y-1 pl-5">
               {report.prompt_results.map((p) => (
                 <li key={p.id}>{p.prompt}</li>
@@ -46,12 +46,12 @@ export default function Methodology({ report }: Props) {
           </div>
 
           <div>
-            <p className="mb-2 font-medium text-neutral-900">Формула Score</p>
+            <p className="mb-2 font-medium text-neutral-900">Score formula</p>
             <pre className="overflow-x-auto rounded-lg bg-neutral-50 p-3 text-xs">
 {`base = (citation_rate * 0.6 + mention_rate * 0.4) * 100
-penalty = 0.7 если sentiment = negative
-        = 0.85 если sentiment = mixed
-        = 1.0  иначе
+penalty = 0.7 if sentiment = negative
+        = 0.85 if sentiment = mixed
+        = 1.0  otherwise
 aeo_score = round(base * penalty, 1)`}
             </pre>
           </div>
@@ -59,16 +59,16 @@ aeo_score = round(base * penalty, 1)`}
           <div>
             <p className="mb-2 font-medium text-neutral-900">Sentiment</p>
             <p>
-              Для каждого запроса с упоминанием бренда отдельный LLM-вызов (gpt-4o-mini) классифицирует тон:
-              positive / neutral / negative. Если в наборе есть и позитив, и негатив — итог mixed.
+              For each query with a brand mention, a separate LLM call (gpt-4o-mini) classifies the tone:
+              positive / neutral / negative. If both positive and negative are present, the result is mixed.
             </p>
           </div>
 
           <div>
-            <p className="mb-2 font-medium text-neutral-900">Дисклеймер</p>
+            <p className="mb-2 font-medium text-neutral-900">Disclaimer</p>
             <p>
-              Score основан на 10 запросах × 1 прогон. Точность ±10 пунктов из-за стохастичности AI-ответов.
-              Для мониторинга трендов нужен периодический прогон.
+              Score is based on 10 queries × 1 run. Accuracy ±10 points due to the stochastic nature of AI responses.
+              For trend monitoring, periodic runs are recommended.
             </p>
           </div>
         </div>

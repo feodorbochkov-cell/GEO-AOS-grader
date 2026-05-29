@@ -40,7 +40,7 @@ body {
 }
 
 @media print {
-  /* Печатаем фоновые цвета (Hero, метрики, выделение упоминаний) */
+  /* Print background colors (Hero, metrics, mention highlights) */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -55,41 +55,41 @@ body {
     background: white !important;
   }
 
-  /* Скрываем CTA, скролл-бары expanded-блоков и всё с print-hide */
+  /* Hide CTA, expanded block scrollbars, and anything with print-hide */
   .print-hide {
     display: none !important;
   }
 
-  /* Главная обёртка отчёта — без внутренних паддингов экранного варианта */
+  /* Main report wrapper — remove screen-only padding */
   main {
     max-width: none !important;
     padding: 0 !important;
   }
 
-  /* Hero не должен разрываться между страницами */
+  /* Hero should not break across pages */
   section {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  /* Таблица промптов: пусть не разрывает строки */
+  /* Prompt table: prevent row breaks */
   tr {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  /* Раскрытый ответ Perplexity — снять max-height/overflow, чтобы всё попало в PDF */
+  /* Expanded Perplexity response — remove max-height/overflow so everything fits in PDF */
   .max-h-96 {
     max-height: none !important;
     overflow: visible !important;
   }
 
-  /* Recharts: SVG сами по себе печатаются нормально, форсим контейнер на полную ширину */
+  /* Recharts: SVGs print fine on their own; force container to full width */
   .recharts-wrapper {
     page-break-inside: avoid;
   }
 
-  /* Убираем тени и скругления чуть-чуть для аккуратной печати */
+  /* Remove shadows and rounding slightly for clean print */
   a {
     text-decoration: none !important;
     color: inherit !important;

@@ -21,7 +21,7 @@ export default function UrlForm() {
       const { id } = await createAnalysis(normalized);
       router.push(`/analyze/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось запустить анализ");
+      setError(err instanceof Error ? err.message : "Failed to start analysis");
       setLoading(false);
     }
   }
@@ -33,7 +33,7 @@ export default function UrlForm() {
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="example.com или https://example.com"
+          placeholder="example.com or https://example.com"
           className="flex-1 rounded-lg border border-neutral-300 px-4 py-3 text-base outline-none focus:border-neutral-900"
           required
           disabled={loading}
@@ -43,12 +43,12 @@ export default function UrlForm() {
           disabled={loading || !url.trim()}
           className="rounded-lg bg-neutral-900 px-6 py-3 text-base font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Запускаю…" : "Проанализировать"}
+          {loading ? "Starting…" : "Analyze"}
         </button>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <p className="text-xs text-neutral-500">
-        Прогон занимает ~15 секунд на анализ + ~60 секунд на отчёт.
+        Analysis takes ~15 seconds + ~60 seconds for the report.
       </p>
     </form>
   );

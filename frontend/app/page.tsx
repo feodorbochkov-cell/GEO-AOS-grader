@@ -3,18 +3,18 @@ import UrlForm from "@/components/UrlForm";
 const workflow = [
   {
     step: "01",
-    title: "Считываем сайт",
-    text: "Забираем главную страницу и ключевые разделы, чтобы понять бренд, рынок, продукты и конкурентов.",
+    title: "Read the site",
+    text: "We fetch the homepage and key sections to understand the brand, market, products, and competitors.",
   },
   {
     step: "02",
-    title: "Собираем спрос",
-    text: "Генерируем 10 коммерческих AI-запросов, которые покупатель реально задает перед выбором.",
+    title: "Generate demand",
+    text: "We generate 10 commercial AI queries that a buyer realistically asks before making a decision.",
   },
   {
     step: "03",
-    title: "Проверяем выдачу",
-    text: "Прогоняем запросы через Perplexity Sonar Pro и фиксируем упоминания, цитаты, источники и тональность.",
+    title: "Check the results",
+    text: "We run the queries through Perplexity Sonar Pro and capture mentions, citations, sources, and sentiment.",
   },
 ];
 
@@ -23,15 +23,15 @@ const reportSignals = [
   "Citation Rate",
   "Mention Rate",
   "Source Share of Voice",
-  "Разбивка по 10 промптам",
-  "Actionable-инсайты",
+  "Breakdown by 10 prompts",
+  "Actionable insights",
 ];
 
 const sourceRows = [
-  { domain: "brand.ru", value: 38, tone: "Бренд" },
-  { domain: "reviewhub.ru", value: 24, tone: "Источник" },
-  { domain: "competitor.ru", value: 18, tone: "Конкурент" },
-  { domain: "media.ru", value: 12, tone: "Медиа" },
+  { domain: "brand.com", value: 38, tone: "Brand" },
+  { domain: "reviewhub.com", value: 24, tone: "Source" },
+  { domain: "competitor.com", value: 18, tone: "Competitor" },
+  { domain: "media.com", value: 12, tone: "Media" },
 ];
 
 export default function HomePage() {
@@ -48,16 +48,16 @@ export default function HomePage() {
 
             <div className="max-w-3xl animate-rise space-y-8">
               <div className="inline-flex border border-[#17130f]/20 bg-[#fffaf1]/70 px-3 py-2 text-xs uppercase text-[#17130f]/70 shadow-sm backdrop-blur">
-                Perplexity visibility report - без подписки
+                Perplexity visibility report — no subscription required
               </div>
               <div className="space-y-5">
                 <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] sm:text-7xl lg:text-8xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-                  Покажите, как AI-поиск видит ваш бренд
+                  See how AI search perceives your brand
                 </h1>
                 <p className="max-w-2xl text-lg leading-8 text-[#413831] sm:text-xl">
-                  AEO Grader прогоняет ваш сайт через поисковые сценарии Perplexity и
-                  возвращает отчет: где бренд цитируют, где проигрывает конкурентам и
-                  какие источники формируют выдачу.
+                  AEO Grader runs your site through Perplexity search scenarios and
+                  returns a report: where your brand is cited, where it loses to
+                  competitors, and which sources shape the results.
                 </p>
               </div>
 
@@ -69,11 +69,11 @@ export default function HomePage() {
             <div className="grid max-w-3xl grid-cols-3 border-y border-[#17130f]/15 text-sm text-[#4b4037]">
               <div className="py-4 pr-4">
                 <div className="text-2xl font-semibold text-[#17130f]">10</div>
-                <div>AI-запросов</div>
+                <div>AI queries</div>
               </div>
               <div className="border-x border-[#17130f]/15 px-4 py-4">
-                <div className="text-2xl font-semibold text-[#17130f]">60-90с</div>
-                <div>до отчета</div>
+                <div className="text-2xl font-semibold text-[#17130f]">60-90s</div>
+                <div>to report</div>
               </div>
               <div className="py-4 pl-4">
                 <div className="text-2xl font-semibold text-[#17130f]">0-100</div>
@@ -90,9 +90,9 @@ export default function HomePage() {
 
       <section className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 lg:grid-cols-[0.75fr_1.25fr] lg:px-10 lg:py-24">
         <div className="space-y-5">
-          <p className="text-sm uppercase text-[#9d3d21]">Методология</p>
+          <p className="text-sm uppercase text-[#9d3d21]">Methodology</p>
           <h2 className="text-4xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-            Аудит построен как реальный путь покупателя
+            The audit mirrors a real buyer's journey
           </h2>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
@@ -112,14 +112,14 @@ export default function HomePage() {
       <section className="border-y border-[#17130f]/10 bg-[#17130f] text-[#fff7ea]">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-24">
           <div className="space-y-6">
-            <p className="text-sm uppercase text-[#d9a441]">Что в отчете</p>
+            <p className="text-sm uppercase text-[#d9a441]">What&apos;s in the report</p>
             <h2 className="text-4xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-              Не просто оценка, а карта источников влияния
+              Not just a score — a map of influence sources
             </h2>
             <p className="max-w-xl text-lg leading-8 text-[#d8cbbb]">
-              Отчет показывает, почему AI-ответ сформировался именно так: какие
-              домены цитируются, где бренд упомянут, а где конкуренты забирают
-              видимость.
+              The report shows why the AI answer formed the way it did: which
+              domains are cited, where your brand appears, and where competitors
+              capture visibility.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#fff7ea]/15 bg-[#fff7ea]/15">
@@ -134,25 +134,25 @@ export default function HomePage() {
 
       <section className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-24">
         <div className="space-y-6">
-          <p className="text-sm uppercase text-[#9d3d21]">Для кого</p>
+          <p className="text-sm uppercase text-[#9d3d21]">Who it&apos;s for</p>
           <h2 className="text-4xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-            Для команд, которым нужен быстрый сигнал перед SEO, PR и контентом
+            For teams that need a fast signal before SEO, PR, and content work
           </h2>
           <p className="max-w-2xl text-lg leading-8 text-[#5c5148]">
-            Используйте разовый аудит как входную диагностику: увидеть пробелы,
-            сравнить себя с конкурентами и понять, какие страницы или публикации
-            стоит усиливать в первую очередь.
+            Use the one-shot audit as an entry-level diagnostic: spot gaps,
+            benchmark against competitors, and identify which pages or
+            publications to strengthen first.
           </p>
         </div>
         <div className="border border-[#17130f]/15 bg-[#fffaf1] p-6 shadow-sm">
           <div className="mb-8 flex items-center justify-between border-b border-[#17130f]/10 pb-4">
-            <span className="text-sm uppercase text-[#17130f]/55">Готовность</span>
+            <span className="text-sm uppercase text-[#17130f]/55">Readiness</span>
             <span className="bg-[#d9a441] px-3 py-1 text-sm font-semibold text-[#17130f]">
               Agent Friendly
             </span>
           </div>
           <div className="space-y-5">
-            {["Бренд найден в ответах", "Источники цитируются стабильно", "Есть конкурентные разрывы"].map(
+            {["Brand found in answers", "Sources cited consistently", "Competitive gaps identified"].map(
               (item) => (
                 <div key={item} className="flex items-center gap-4">
                   <span className="h-3 w-3 bg-[#9d3d21]" />
@@ -168,9 +168,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl border border-[#17130f]/15 bg-[#fffaf1] p-6 shadow-[0_24px_80px_rgba(23,19,15,0.10)] sm:p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-center">
             <div className="space-y-4">
-              <p className="text-sm uppercase text-[#9d3d21]">Запустить аудит</p>
+              <p className="text-sm uppercase text-[#9d3d21]">Run an audit</p>
               <h2 className="text-3xl font-semibold leading-tight sm:text-5xl [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
-                Введите домен и получите первый срез AI-видимости
+                Enter your domain and get your first AI visibility snapshot
               </h2>
             </div>
             <UrlForm />
@@ -187,7 +187,7 @@ function ReportPreview() {
       <div className="mb-6 flex items-start justify-between gap-4 border-b border-[#17130f]/10 pb-5">
         <div>
           <p className="text-xs uppercase text-[#17130f]/50">Report preview</p>
-          <h2 className="mt-2 text-2xl font-semibold">brand.ru</h2>
+          <h2 className="mt-2 text-2xl font-semibold">brand.com</h2>
         </div>
         <div className="text-right">
           <div className="text-5xl font-semibold leading-none [font-family:Georgia,'Iowan_Old_Style','Times_New_Roman',serif]">
@@ -236,7 +236,7 @@ function ReportPreview() {
       <div className="mt-6 border border-[#17130f]/10 bg-[#17130f] p-4 text-[#fff7ea]">
         <p className="text-xs uppercase text-[#fff7ea]/50">Prompt sample</p>
         <p className="mt-3 leading-7">
-          Какие сервисы выбрать для автоматизации поддержки в e-commerce?
+          Which services should I choose for automating e-commerce support?
         </p>
       </div>
     </div>
