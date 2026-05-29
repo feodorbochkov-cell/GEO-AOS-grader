@@ -1,3 +1,4 @@
+import "dotenv/config"
 import express from "express"
 import { scanUrl } from "./scanner"
 import type { ScanRequest } from "./types"
