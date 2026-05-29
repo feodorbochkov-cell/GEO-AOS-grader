@@ -94,6 +94,7 @@ export async function runBrowserAgent(
     }
 
     messages.push({ role: "assistant", content: response.content })
+    if (toolResults.length === 0) break
     messages.push({ role: "user", content: toolResults })
   }
 

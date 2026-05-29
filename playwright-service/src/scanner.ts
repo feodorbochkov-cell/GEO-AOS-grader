@@ -22,7 +22,10 @@ function isSafeUrl(url: string): boolean {
     const ipv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
     if (ipv4) {
       const [, a, b] = ipv4.map(Number)
+      if (a === 0) return false
       if (a === 10) return false
+      if (a === 127) return false
+      if (a === 169 && b === 254) return false
       if (a === 172 && b >= 16 && b <= 31) return false
       if (a === 192 && b === 168) return false
     }

@@ -1,6 +1,26 @@
 import type { Tool } from "@anthropic-ai/sdk/resources/messages"
 import type { Page } from "playwright"
 
+function isSafeNavigateUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (u.protocol !== "https:" && u.protocol !== "http:") return false
+    const h = u.hostname.toLowerCase()
+    if (h === "localhost" || h === "127.0.0.1" || h === "::1") return false
+    const ipv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+    if (ipv4) {
+      const [, a, b] = ipv4.map(Number)
+      if (a === 0) return false
+      if (a === 10) return false
+      if (a === 127) return false
+      if (a === 169 && b === 254) return false
+      if (a === 172 && b >= 16 && b <= 31) return false
+      if (a === 192 && b === 168) return false
+    }
+    return true
+  } catch { return false }
+}
+
 export const BROWSER_TOOLS: Tool[] = [
   {
     name: "navigate",
@@ -72,7 +92,9 @@ export async function executeTool(
 ): Promise<unknown> {
   switch (name) {
     case "navigate": {
-      const response = await page.goto(input.url as string, { waitUntil: "domcontentloaded", timeout: 10000 }).catch(() => null)
+      const targetUrl = input.url as string
+      if (!isSafeNavigateUrl(targetUrl)) return { error: "URL rejected: not a safe public URL" }
+      const response = await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 10000 }).catch(() => null)
       return {
         title: await page.title().catch(() => ""),
         statusCode: response?.status() ?? null,
